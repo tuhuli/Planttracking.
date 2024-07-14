@@ -111,7 +111,7 @@ def kalman_detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCapt
             print(f"prediction = {k_filter.x} \n\n\n")
 
         remove_duplicate_filters(filters)
-        show_bounding_boxes_in_frame(thresh_image, plants, filters, out, grayscale)
+        show_bounding_boxes_in_frame(thresh_image, out_frame, plants, filters, out, grayscale)
 
     new_cap.release()
     read_cap.release()

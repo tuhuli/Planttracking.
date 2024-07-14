@@ -3,9 +3,9 @@ from typing import List
 import cv2
 import numpy as np
 
-from Bakalarka_kod.preprocessing import initialize_tr
 from kalman_filter import KalmanFilterID
 from particle_filter import ParticleFilter
+from preprocessing import initialize_tr
 from trackedObject import TrackedObject
 
 

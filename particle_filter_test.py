@@ -23,7 +23,7 @@ def remove_duplicate_filters(filters):
 
 def remove_filter_outside_of_image(filters):
     for p_f in filters:
-        if p_f.x > p_f.max_width or p_f.y > p_f.max_height:
+        if p_f.x > p_f.max_width or p_f.y > p_f.max_height or p_f.x < 0 or p_f.y < 0:
             filters.remove(p_f)
 
 

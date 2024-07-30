@@ -4,15 +4,38 @@ import cv2
 import numpy as np
 
 
-def ellipse_formula(x, y, a, b, h, k, angle):
+def ellipse_formula(x: float, y: float, a: float, b: float, h: float, k: float, angle: float) -> float:
+    """
+        Calculate the value of the ellipse formula for given coordinates and ellipse parameters.
+        Values bigger then 1 does not lie in the ellipsis
+
+        Parameters:
+        x (float): The x-coordinate of the point.
+        y (float): The y-coordinate of the point.
+        a (float): The semi-major axis of the ellipse.
+        b (float): The semi-minor axis of the ellipse.
+        h (float): The x-coordinate of the ellipse center.
+        k (float): The y-coordinate of the ellipse center.
+        angle (float): The rotation angle of the ellipse in radians.
+
+        Returns:
+        float: The computed value of the ellipse formula at the point (x, y).
+        """
     return (((((x - h) * cos(angle) + (y - k) * sin(angle)) ** 2) / (a ** 2)) +
             ((((x - h) * sin(angle) - (y - k) * cos(angle)) ** 2) / (b ** 2)))
 
 
-def create_synthetic_video(number_of_frames, video_location):
+def create_synthetic_video(number_of_frames: int, video_location: str) -> None:
+    """
+        Create a synthetic video with moving ellipses.
+
+        Parameters:
+        number_of_frames (int): The total number of frames in the video.
+        video_location (str): The file path where the video will be saved.
+        """
     width, height = 672, 368
     fps = 59.94
-    ellipse_axes = (25, 80)
+    ellipse_axes = (50, 110)
     frames_between_objects = 100
 
     start_x_pos = 0

@@ -109,6 +109,9 @@ def bb_from_particle_filter(image: np.ndarray, p_filters: List[ParticleFilter],
             (pt1, _, _, pt2) = particle_filter.get_color_bb()
 
         cv2.rectangle(image, pt1, pt2, (0, 0, 255), 2)
+
+        text_position = (int(pt1[0]), int(pt1[1] - 5))
+        cv2.putText(image, str(particle_filter.id), text_position, cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2)
     return image
 
 
@@ -135,3 +138,7 @@ def show_bounding_boxes_in_frame(frame: np.ndarray, color_frame: np.ndarray,
     out_frame = bb_from_tr_object(out_frame, plants, grayscale)
     out_frame = bb_from_kalman_filter(out_frame, filters, grayscale)
     out.write(out_frame)
+
+
+def show_particles_in_image():
+    pass

@@ -8,6 +8,7 @@ class ParticleFilter:
     """
     A class to represent a Particle Filter.
     """
+    _id_counter = 0
 
     def __init__(self, max_x, max_y):
         self.particles = None
@@ -17,6 +18,8 @@ class ParticleFilter:
         self.x = None
         self.y = None
         self.number_of_particles = 1000
+        self.id = ParticleFilter._id_counter
+        ParticleFilter._id_counter += 1
 
     def predict(self, std):
         """
@@ -87,7 +90,6 @@ class ParticleFilter:
                     or int(particle[1]) >= self.max_height or int(particle[1]) < 0):
                 self.weights[i] = 0
             else:
-                # normalize image
                 measurement_likelihood = image[int(particle[1]), int(particle[0])]
                 self.weights[i] *= measurement_likelihood
         self.weights += 1.e-300  # avoid round-off to zero

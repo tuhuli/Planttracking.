@@ -19,6 +19,7 @@ class ParticleFilter:
         self.y = None
         self.number_of_particles = 1000
         self.id = ParticleFilter._id_counter
+        self.max_weight = 0
         ParticleFilter._id_counter += 1
 
     def predict(self, std):
@@ -94,6 +95,7 @@ class ParticleFilter:
                 self.weights[i] *= measurement_likelihood
         self.weights += 1.e-300  # avoid round-off to zero
         self.weights /= sum(self.weights)  # normalize
+        self.max_weight = max(self.weights)
 
     def estimate(self):
         """

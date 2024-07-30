@@ -5,7 +5,7 @@ import numpy as np
 
 from object_detection import get_plants_and_initialize_filter
 from particle_filter import ParticleFilter
-from visualization import bb_from_particle_filter
+from visualization import bb_from_particle_filter, show_particles_in_image
 
 """
 Same function is currently in Kalman test -> rewrite it to somewhere 
@@ -28,7 +28,7 @@ def remove_filter_outside_of_image(filters):
 
 
 def particle_detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCapture, out: cv2.VideoWriter,
-                                grayscale: bool) -> None:
+                                grayscale: bool, show_particles: bool) -> None:
     """
     Applies Particle filter-based object detection on a video and saves the output.
 
@@ -36,7 +36,8 @@ def particle_detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCa
         new_cap (cv2.VideoCapture): Capture of output video.
         read_cap (cv2.VideoCapture): Capture of input video.
         out (cv2.VideoWriter): writer to save the output video with bounding boxes.
-        grayscale(bool) -> None
+        grayscale(bool): boolean to signal grayscale video
+        show_particles(bool): boolean to signal if the particles should be shown in the video
     """
     no_object_frames_counter = 10
     num_of_objects = 0
@@ -53,8 +54,9 @@ def particle_detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCa
         thresh_image = np.where(in_frame < threshold, 0, in_frame)
 
         # Turn image to grayscale
-        g_image = np.array(thresh_image[:, :, 0])
-        plants, no_object_frames_counter, num_of_objects = get_plants_and_initialize_filter(g_image,
+        g_thresh_image = np.array(thresh_image[:, :, 0])
+        g_image = np.array(in_frame[:, :, 0])
+        plants, no_object_frames_counter, num_of_objects = get_plants_and_initialize_filter(g_thresh_image,
                                                                                             filters,
                                                                                             num_of_objects,
                                                                                             no_object_frames_counter,
@@ -81,6 +83,9 @@ def particle_detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCa
             image = out_frame
 
         image = bb_from_particle_filter(image, filters, grayscale)
+        if show_particles:
+            image = show_particles_in_image(image, filters, grayscale)
+
         # io.imshow(image)
         # io.show()
         out.write(image)

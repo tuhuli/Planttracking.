@@ -140,5 +140,39 @@ def show_bounding_boxes_in_frame(frame: np.ndarray, color_frame: np.ndarray,
     out.write(out_frame)
 
 
-def show_particles_in_image():
-    pass
+def show_particles_in_image(frame: np.ndarray, particle_filters: List[ParticleFilter], grayscale: bool):
+    """
+        Draws particles on the given frame with color intensity proportional to their weights.
+
+        Args:
+            frame (np.ndarray): The input image frame on which particles will be drawn.
+            particle_filters (List[ParticleFilter]): List of ParticleFilters containing particles and their weights.
+            grayscale (bool): Whether the frame is in grayscale.
+
+        Returns:
+            np.ndarray: The frame with particles drawn on it.
+        """
+    for p_f in particle_filters:
+        for i in range(len(p_f.particles)):
+            color = (p_f.weights[i] / p_f.max_weight) * 255
+            centre = int(p_f.particles[i][0]), int(p_f.particles[i][1])
+            cv2.circle(frame, centre, 1, (255 - color, 0, color), 2)
+    return frame
+
+
+def show_particle_centre(frame: np.ndarray, particle_filters: List[ParticleFilter], grayscale: bool):
+    """
+        Draws the central point of each particle filter on the given frame.
+
+        Args:
+            frame (np.ndarray): The input image frame on which the central points will be drawn.
+            particle_filters (List[ParticleFilter]): List of ParticleFilter objects containing the central points.
+            grayscale (bool): Whether the frame is in grayscale or not (affects color representation).
+
+        Returns:
+            np.ndarray: The frame with central points drawn on it.
+    """
+
+    for p_f in particle_filters:
+        cv2.circle(frame, (p_f.x, p_f.y), 7, (0, 0, 255), 4)
+    return frame

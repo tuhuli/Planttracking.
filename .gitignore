@@ -1,0 +1,10 @@
+# Ignore Python bytecode
+__pycache__/
+
+# Ignore Videos bytecode
+*.mp4
+
+tests/
+graphs/
+mat_functions.py
+.idea/

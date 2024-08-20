@@ -115,6 +115,38 @@ def bb_from_particle_filter(image: np.ndarray, p_filters: List[ParticleFilter],
     return image
 
 
+def line_from_filter(image: np.ndarray, filters: List[ParticleFilter] | List[KalmanFilterID],
+                     grayscale: bool = True) -> np.ndarray:
+    """
+    Draws bounding boxes from particle filters on the given image.
+
+    Parameters:
+        image (np.ndarray): The input image on which bounding boxes are drawn.
+        p_filters (List[object]): List of particle filters.
+        grayscale (bool): Whether the image is grayscale. Default is True.
+
+    Returns:
+        np.ndarray: Image with drawn bounding boxes.
+    """
+
+    for tracking_filter in filters:
+        if grayscale:
+            x = int(tracking_filter.get_centre_x())
+        else:
+            x = tracking_filter.get_centre_x() * 2
+
+        color = (255, 0, 255)  # White color
+        thickness = 2  # Line thickness
+
+        # Draw the vertical line on the image
+        image = cv2.line(image, (x, 0), (x, image.shape[0]), color, thickness)
+
+        text_position = (int(x), int(100))
+        cv2.putText(image, str(tracking_filter.id), text_position, cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2)
+
+    return image
+
+
 def show_bounding_boxes_in_frame(frame: np.ndarray, color_frame: np.ndarray,
                                  plants: List[TrackedObject], filters: List[KalmanFilterID],
                                  out: cv2.VideoWriter, grayscale: bool) -> None:

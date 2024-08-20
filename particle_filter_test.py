@@ -3,9 +3,10 @@ from typing import List
 import cv2
 import numpy as np
 
+from evaluation import Eval_class
 from object_detection import get_plants_and_initialize_filter
 from particle_filter import ParticleFilter
-from visualization import bb_from_particle_filter, show_particles_in_image
+from visualization import show_particles_in_image, line_from_filter
 
 """
 Same function is currently in Kalman test -> rewrite it to somewhere 
@@ -23,7 +24,7 @@ def remove_duplicate_filters(filters):
 
 def remove_filter_outside_of_image(filters):
     for p_f in filters:
-        if p_f.x > p_f.max_width or p_f.y > p_f.max_height or p_f.x < 0 or p_f.y < 0:
+        if p_f.x > p_f.max_width - 40 or p_f.y > p_f.max_height or p_f.x < 0 or p_f.y < 0:
             filters.remove(p_f)
 
 
@@ -42,7 +43,8 @@ def particle_detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCa
     no_object_frames_counter = 10
     num_of_objects = 0
     filters: List[ParticleFilter] = []
-
+    frame = 0
+    evaluator = Eval_class("C:\SchoolApps\Bakalarka\Bakalarka_kod\ground_truth_data\ground_true_frames_SG19.json", 40)
     while True:
         out_ret, out_frame = new_cap.read()
         in_ret, in_frame = read_cap.read()
@@ -62,7 +64,7 @@ def particle_detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCa
                                                                                             no_object_frames_counter,
                                                                                             'particle')
         for p_f in filters:
-            p_f.predict((0.2, 0.05))
+            p_f.predict((1, 0.1, 0.3, 0.05))
             p_f.convert_particles_to_int()
             p_f.update_with_image(g_image)
             # p_f.print_best_weights(300)
@@ -70,9 +72,17 @@ def particle_detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCa
             mu, var = p_f.estimate()
 
             if p_f.neff() < p_f.number_of_particles / 2:
-                p_f.basic_resample_weights()
-                assert np.allclose(p_f.weights, 1 / p_f.number_of_particles)
-            print(f"position: {mu}")
+                print("nef==================================")
+                p_f.systematic_resample()
+                # p_f.basic_resample_weights()
+                # assert np.allclose(p_f.weights, 1 / p_f.number_of_particles)
+            print(f"position: {mu},  max_weight = {p_f.max_weight}")
+
+            evaluator.check_if_found_plant(p_f, frame, g_image.shape[1])
+            if evaluator.get_current_ground_truth_frame() == frame:
+                print(f"HAS PLANT: {evaluator.get_current_ground_truth_frame()}")
+                print(f"lower_boundry = {g_image.shape[1] // 2 - evaluator.variance}")
+                print(f"upper_boundry = {g_image.shape[1] // 2 + evaluator.variance}")
 
         remove_duplicate_filters(filters)
         remove_filter_outside_of_image(filters)
@@ -82,10 +92,14 @@ def particle_detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCa
         else:
             image = out_frame
 
-        image = bb_from_particle_filter(image, filters, grayscale)
+        image = line_from_filter(image, filters, grayscale)
         if show_particles:
             image = show_particles_in_image(image, filters, grayscale)
 
         # io.imshow(image)
         # io.show()
         out.write(image)
+
+        frame += 1
+
+    evaluator.print_results()

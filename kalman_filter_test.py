@@ -4,9 +4,10 @@ import cv2
 import numpy as np
 
 import kalman_filter
+from evaluation import Eval_class
 from object_detection import get_plants_and_initialize_filter
 from trackedObject import TrackedObject
-from visualization import show_bounding_boxes_in_frame
+from visualization import line_from_filter
 
 
 def pair_filter_with_plants(filters: List[kalman_filter.KalmanFilterID],
@@ -31,7 +32,7 @@ def pair_filter_with_plants(filters: List[kalman_filter.KalmanFilterID],
         for plant in plants:
             distance = abs(plant.x - k_filter.x[0])
 
-            if distance < 200 and (closest_plant is None or closest_distance > distance):
+            if distance < 100 and (closest_plant is None or closest_distance > distance):
                 closest_plant = plant
                 closest_distance = distance
 
@@ -75,7 +76,9 @@ def kalman_detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCapt
     no_object_frames_counter = 10
     num_of_objects = 0
     filters: List[kalman_filter.KalmanFilterID] = []
+    frame = 0
 
+    evaluator = Eval_class("C:\SchoolApps\Bakalarka\Bakalarka_kod\ground_truth_data\ground_true_frames_SG19.json", 40)
     while True:
         out_ret, out_frame = new_cap.read()
         in_ret, in_frame = read_cap.read()
@@ -83,7 +86,7 @@ def kalman_detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCapt
         if not out_ret or not in_ret:
             break
 
-        threshold = 200
+        threshold = 160
         thresh_image = np.where(in_frame < threshold, 0, in_frame)
 
         # Turn image to grayscale
@@ -104,17 +107,37 @@ def kalman_detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCapt
 
             k_filter.update(measurement)
 
-            if k_filter.x[0] > len(thresh_image[0]) or k_filter.x[0] < 0 or k_filter.frames_not_found > 5:
+            if k_filter.x[0] > len(thresh_image[0]) or k_filter.x[0] < 0 or k_filter.frames_not_found > 15:
                 filters.remove(k_filter)
 
             print("--------------")
-            print(f"prediction = {k_filter.x} \n\n\n")
+            print(f"prediction {k_filter.id} = {k_filter.x} \n\n\n")
+            if measurement is None or (
+                    abs(measurement[0] - k_filter.x[0]) > 20 or abs(measurement[1] - k_filter.x[1]) > 20 or abs(
+                measurement[2] - k_filter.x[2]) > 20 or abs(measurement[3] - k_filter.x[3]) > 20):
+                print()
+                print(f" {k_filter.P} \n")
+            evaluator.check_if_found_plant(k_filter, frame, g_image.shape[1])
+            if evaluator.get_current_ground_truth_frame() == frame:
+                print(f"HAS PLANT: {evaluator.get_current_ground_truth_frame()}")
+                print(f"lower_boundry = {g_image.shape[1] // 2 - evaluator.variance}")
+                print(f"upper_boundry = {g_image.shape[1] // 2 + evaluator.variance}")
 
         remove_duplicate_filters(filters)
-        show_bounding_boxes_in_frame(thresh_image, out_frame, plants, filters, out, grayscale)
+        # show_bounding_boxes_in_frame(thresh_image, out_frame, plants, filters, out, grayscale)
+        if grayscale:
+            image = in_frame
+        else:
+            image = out_frame
+        image = line_from_filter(image, filters, grayscale)
+        out.write(image)
+
+        frame += 1
 
     new_cap.release()
     read_cap.release()
     out.release()
+    
+    evaluator.print_results()
 
     cv2.destroyAllWindows()

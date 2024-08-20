@@ -34,9 +34,9 @@ def get_plants_and_initialize_filter(image: np.ndarray,
         """
     plant_in_initialization_area = False
     plants = []
-    numLabels, labels, stats, centroids = cv2.connectedComponentsWithStats(image, 8, cv2.CV_32S)
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(image, 8, cv2.CV_32S)
 
-    for i in range(0, numLabels):
+    for i in range(0, num_labels):
         x, y, w, h, area, c_x, c_y = get_object_stats(i, stats, centroids)
 
         if 3000 < area < 10000:
@@ -55,7 +55,8 @@ def get_plants_and_initialize_filter(image: np.ndarray,
                 elif filter == "particle":
                     height, width = image.shape
                     p_f = ParticleFilter(width, height)
-                    p_f.particles = create_uniform_particles((x, x + w), (y, y + h), (2, 5), (-5, 5),
+                    p_f.particles = create_uniform_particles((x - w // 2, x + w // 2), (y - h // 2, y + h // 2),
+                                                             (11, 15), (-1, 1),
                                                              NUMBER_OF_PARTICLES)
                     p_f.weights = np.ones(NUMBER_OF_PARTICLES) / NUMBER_OF_PARTICLES
                     filters.append(p_f)

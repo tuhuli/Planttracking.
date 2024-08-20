@@ -30,8 +30,10 @@ class ParticleFilter:
             std (tuple): The standard deviation for the noise in movement.
         """
         N = len(self.particles)
-        self.particles[:, 0] += self.particles[:, 2] + (np.random.randn(N) * std[1])
+        self.particles[:, 0] += self.particles[:, 2] + (np.random.randn(N) * std[0])
         self.particles[:, 1] += self.particles[:, 3] + (np.random.randn(N) * std[1])
+        self.particles[:, 2] += np.random.randn(N) * std[2]
+        self.particles[:, 3] += (np.random.randn(N)) * std[3]
 
     def update(self, last_position):
         """
@@ -92,7 +94,7 @@ class ParticleFilter:
                 self.weights[i] = 0
             else:
                 measurement_likelihood = image[int(particle[1]), int(particle[0])]
-                self.weights[i] *= measurement_likelihood
+                self.weights[i] = (self.weights[i] + 0.05) * (measurement_likelihood)
         self.weights += 1.e-300  # avoid round-off to zero
         self.weights /= sum(self.weights)  # normalize
         self.max_weight = max(self.weights)
@@ -127,7 +129,7 @@ class ParticleFilter:
         Resample weights using the particle with the maximum weight.
         """
         max_weight = self.weights.argmax()
-        self.particles = create_gaussian_particles(self.particles[max_weight], (2, 2, 5, 5), len(self.particles))
+        self.particles = create_gaussian_particles(self.particles[max_weight], (10, 10, 2, 2), len(self.particles))
         self.weights.fill(1.0 / len(self.weights))
 
     def resample_with_last_measurement(self, robot_velocity):
@@ -140,6 +142,20 @@ class ParticleFilter:
         max_weight = self.weights.argmax()
         std = robot_velocity[0] * 0.5, robot_velocity[1] * 0.5, robot_velocity[0] * 2, robot_velocity[1] * 2
         self.particles = create_gaussian_particles(self.particles[max_weight], std, len(self.particles))
+        self.weights.fill(1.0 / len(self.weights))
+
+    def systematic_resample(self):
+        """
+            Perform systematic resampling.
+        """
+
+        positions = (np.arange(len(self.particles)) + np.random.uniform(0, 1)) / len(self.particles)
+
+        cumulative_sum = np.cumsum(self.weights)
+        cumulative_sum[-1] = 1.0
+
+        indices = np.searchsorted(cumulative_sum, positions)
+        self.particles = self.particles[indices]
         self.weights.fill(1.0 / len(self.weights))
 
     def neff(self):
@@ -196,6 +212,9 @@ class ParticleFilter:
         return ((bb[0][0] * 2, bb[0][1] * 2), (bb[1][0] * 2, bb[1][1] * 2),
                 (bb[2][0] * 2, bb[2][1] * 2), (bb[3][0] * 2, bb[3][1] * 2))
 
+    def get_centre_x(self):
+        return self.x
+
 
 def create_uniform_particles(x_range, y_range, velocity_range_x, velocity_range_y, N):
     """
@@ -236,7 +255,7 @@ def create_gaussian_particles(mean, std, N):
 
     particles[:, 0] = mean[0] + (np.random.randn(N) * std[0])
     particles[:, 1] = mean[1] + (np.random.randn(N) * std[1])
-    particles[:, 2] = mean[2] + (np.random.randn(N) * std[2])
+    particles[:, 2] = mean[2] + (abs(np.random.randn(N)) * std[2])
     particles[:, 3] = mean[3] + (np.random.randn(N) * std[3])
     return particles
 

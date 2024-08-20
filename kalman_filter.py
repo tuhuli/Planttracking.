@@ -53,6 +53,9 @@ class KalmanFilterID(KalmanFilter):
         return ((bb[0][0] * 2, bb[0][1] * 2), (bb[1][0] * 2, bb[1][1] * 2),
                 (bb[2][0] * 2, bb[2][1] * 2), (bb[3][0] * 2, bb[3][1] * 2))
 
+    def get_centre_x(self):
+        return self.x[0]
+
 
 def initialize_kalman_filter(o: TrackedObject, id: int) -> KalmanFilterID:
     """
@@ -66,7 +69,7 @@ def initialize_kalman_filter(o: TrackedObject, id: int) -> KalmanFilterID:
         KalmanFilterID: The initialized Kalman filter.
     """
     f = KalmanFilterID(dim_x=8, dim_z=4, id=id)
-    f.x = np.array([o.x, o.y, o.bb_x_half, o.bb_y_half, 1., 0., 0., 0.])
+    f.x = np.array([o.x, o.y, o.bb_x_half, o.bb_y_half, 5., 0., 0., 0.])
     f.F = np.array([[1., 0., 0., 0., 1., 0., 0., 0.],
                     [0., 1., 0., 0., 0., 1., 0., 0.],
                     [0., 0., 1., 0., 0., 0., 1., 0.],
@@ -83,13 +86,16 @@ def initialize_kalman_filter(o: TrackedObject, id: int) -> KalmanFilterID:
 
     f.P *= np.array([[25., 0., 0., 0., 0., 0., 0., 0.],
                      [0., 25., 0., 0., 0., 0., 0., 0.],
-                     [0., 0., 100., 0., 0., 0., 0., 0.],
-                     [0., 0., 0., 100., 0., 0., 0., 0.],
-                     [0., 0., 0., 0., 225., 0., 0., 0.],
-                     [0., 0., 0., 0., 0., 225., 0., 0.],
-                     [0., 0., 0., 0., 0., 0., 225., 0.],
-                     [0., 0., 0., 0., 0., 0., 0., 225.]])
-    f.R = np.eye(4) * 1000
+                     [0., 0., 10., 0., 0., 0., 0., 0.],
+                     [0., 0., 0., 10., 0., 0., 0., 0.],
+                     [0., 0., 0., 0., 25., 0., 0., 0.],
+                     [0., 0., 0., 0., 0., 25., 0., 0.],
+                     [0., 0., 0., 0., 0., 0., 25., 0.],
+                     [0., 0., 0., 0., 0., 0., 0., 25.]])
+    f.R = np.array([[10., 0., 0., 0.],
+                    [0., 10., 0., 0.],
+                    [0., 0., 10000000., 0.],
+                    [0., 0., 0., 10000000.]])
 
     white_noise_matrix = np.random.uniform(0.05, 0.2, size=(8, 8))
     f.Q = white_noise_matrix

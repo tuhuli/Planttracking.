@@ -1,31 +1,10 @@
-from typing import List
-
 import cv2
 import numpy as np
 
 from evaluation import Eval_class
 from object_detection import get_plants_and_initialize_filter
-from particle_filter import ParticleFilter
+from particle_filter_manager import ParticleFilterManager
 from visualization import show_particles_in_image, line_from_filter
-
-"""
-Same function is currently in Kalman test -> rewrite it to somewhere 
-"""
-
-
-def remove_duplicate_filters(filters):
-    for p_filter in filters:
-        for p_filter2 in filters:
-            if p_filter == p_filter2:
-                continue
-            if abs(p_filter.x - p_filter2.x) < 50:
-                filters.remove(p_filter2)
-
-
-def remove_filter_outside_of_image(filters):
-    for p_f in filters:
-        if p_f.x > p_f.max_width - 40 or p_f.y > p_f.max_height or p_f.x < 0 or p_f.y < 0:
-            filters.remove(p_f)
 
 
 def particle_detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCapture, out: cv2.VideoWriter,
@@ -42,7 +21,7 @@ def particle_detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCa
     """
     no_object_frames_counter = 10
     num_of_objects = 0
-    filters: List[ParticleFilter] = []
+    particle_filter_manager = ParticleFilterManager()
     frame = 0
     evaluator = Eval_class("C:\SchoolApps\Bakalarka\Bakalarka_kod\ground_truth_data\ground_true_frames_SG19.json", 40)
     while True:
@@ -59,11 +38,11 @@ def particle_detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCa
         g_thresh_image = np.array(thresh_image[:, :, 0])
         g_image = np.array(in_frame[:, :, 0])
         plants, no_object_frames_counter, num_of_objects = get_plants_and_initialize_filter(g_thresh_image,
-                                                                                            filters,
+                                                                                            particle_filter_manager,
                                                                                             num_of_objects,
                                                                                             no_object_frames_counter,
                                                                                             'particle')
-        for p_f in filters:
+        for p_f in particle_filter_manager.filters:
             p_f.predict((1, 0.1, 0.3, 0.05))
             p_f.convert_particles_to_int()
             p_f.update_with_image(g_image)
@@ -71,7 +50,7 @@ def particle_detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCa
 
             mu, var = p_f.estimate()
 
-            if p_f.neff() < p_f.number_of_particles / 2:
+            if p_f.neff() < particle_filter_manager.number_of_particles / 2:
                 print("nef==================================")
                 p_f.systematic_resample()
                 # p_f.basic_resample_weights()
@@ -84,17 +63,16 @@ def particle_detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCa
                 print(f"lower_boundry = {g_image.shape[1] // 2 - evaluator.variance}")
                 print(f"upper_boundry = {g_image.shape[1] // 2 + evaluator.variance}")
 
-        remove_duplicate_filters(filters)
-        remove_filter_outside_of_image(filters)
+        particle_filter_manager.end_of_frame_cleanup()
 
         if grayscale:
             image = in_frame
         else:
             image = out_frame
 
-        image = line_from_filter(image, filters, grayscale)
+        image = line_from_filter(image, particle_filter_manager.filters, grayscale)
         if show_particles:
-            image = show_particles_in_image(image, filters, grayscale)
+            image = show_particles_in_image(image, particle_filter_manager.filters, grayscale)
 
         # io.imshow(image)
         # io.show()

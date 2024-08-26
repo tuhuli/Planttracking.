@@ -1,18 +1,16 @@
-from typing import List, Tuple
+from typing import Tuple
 
 import cv2
 import numpy as np
 from skimage import io as skio
 
-from kalman_filter import KalmanFilterID, initialize_kalman_filter
-from particle_filter import ParticleFilter, create_uniform_particles
+from filter_manager import FilterManager
+from kalman_filter import initialize_kalman_filter
 from trackedObject import TrackedObject
-
-NUMBER_OF_PARTICLES = 1000
 
 
 def get_plants_and_initialize_filter(image: np.ndarray,
-                                     filters: List[KalmanFilterID] | List[ParticleFilter],
+                                     f_manager: FilterManager,
                                      num_of_objects: int,
                                      no_object_frames_counter: int,
                                      filter: str) -> Tuple[list[TrackedObject], int, int]:
@@ -22,7 +20,7 @@ def get_plants_and_initialize_filter(image: np.ndarray,
 
         Parameters:
             image (numpy.ndarray): The input grayscale image.
-            filters (List[kalman_filter.KalmanFilterID] | List[ParticleFilter]): List of active Kalman filters.
+            f_manager (List[kalman_filter.KalmanFilterID] | List[ParticleFilter]): List of active Kalman filters.
             num_of_objects (int): Number of detected objects to use as ID for new Kalman filter.
             no_object_frames_counter (int): Number of frames without detected plant in initialization area.
             filter (str): Name of the filter to initialize. 'particle'/'kalman'
@@ -50,16 +48,12 @@ def get_plants_and_initialize_filter(image: np.ndarray,
 
                 if filter == "kalman":
                     k_f = initialize_kalman_filter(tr_object, num_of_objects)
-                    filters.append(k_f)
+                    # filters.append(k_f)
 
                 elif filter == "particle":
                     height, width = image.shape
-                    p_f = ParticleFilter(width, height)
-                    p_f.particles = create_uniform_particles((x - w // 2, x + w // 2), (y - h // 2, y + h // 2),
-                                                             (11, 15), (-1, 1),
-                                                             NUMBER_OF_PARTICLES)
-                    p_f.weights = np.ones(NUMBER_OF_PARTICLES) / NUMBER_OF_PARTICLES
-                    filters.append(p_f)
+                    f_manager.initialize_filter(max_width=width, max_height=height, x=x, y=y, w=w, h=h)
+
 
             elif c_x < 150:
                 plant_in_initialization_area = True

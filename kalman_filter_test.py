@@ -5,6 +5,7 @@ import numpy as np
 
 import kalman_filter
 from evaluation import Eval_class
+from kalman_filter_manager import KalmanFilterManager
 from object_detection import get_plants_and_initialize_filter
 from trackedObject import TrackedObject
 from visualization import line_from_filter
@@ -75,7 +76,7 @@ def kalman_detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCapt
 
     no_object_frames_counter = 10
     num_of_objects = 0
-    filters: List[kalman_filter.KalmanFilterID] = []
+    kalman_filter_manager = KalmanFilterManager()
     frame = 0
 
     evaluator = Eval_class("C:\SchoolApps\Bakalarka\Bakalarka_kod\ground_truth_data\ground_true_frames_SG19.json", 40)
@@ -92,12 +93,12 @@ def kalman_detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCapt
         # Turn image to grayscale
         g_image = np.array(thresh_image[:, :, 0])
         plants, no_object_frames_counter, num_of_objects = get_plants_and_initialize_filter(g_image,
-                                                                                            filters,
+                                                                                            kalman_filter_manager,
                                                                                             num_of_objects,
                                                                                             no_object_frames_counter,
                                                                                             'kalman')
 
-        k_filter_plant_pair = pair_filter_with_plants(filters, plants)
+        k_filter_plant_pair = pair_filter_with_plants(kalman_filter_manager.filters, plants)
         for k_filter, plant in k_filter_plant_pair:
             measurement = None
 
@@ -108,7 +109,7 @@ def kalman_detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCapt
             k_filter.update(measurement)
 
             if k_filter.x[0] > len(thresh_image[0]) or k_filter.x[0] < 0 or k_filter.frames_not_found > 15:
-                filters.remove(k_filter)
+                kalman_filter_manager.filters.remove(k_filter)
 
             print("--------------")
             print(f"prediction {k_filter.id} = {k_filter.x} \n\n\n")
@@ -123,13 +124,13 @@ def kalman_detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCapt
                 print(f"lower_boundry = {g_image.shape[1] // 2 - evaluator.variance}")
                 print(f"upper_boundry = {g_image.shape[1] // 2 + evaluator.variance}")
 
-        remove_duplicate_filters(filters)
+        remove_duplicate_filters(kalman_filter_manager.filters)
         # show_bounding_boxes_in_frame(thresh_image, out_frame, plants, filters, out, grayscale)
         if grayscale:
             image = in_frame
         else:
             image = out_frame
-        image = line_from_filter(image, filters, grayscale)
+        image = line_from_filter(image, kalman_filter_manager.filters, grayscale)
         out.write(image)
 
         frame += 1
@@ -137,7 +138,7 @@ def kalman_detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCapt
     new_cap.release()
     read_cap.release()
     out.release()
-    
+
     evaluator.print_results()
 
     cv2.destroyAllWindows()

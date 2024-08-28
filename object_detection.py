@@ -5,13 +5,11 @@ import numpy as np
 from skimage import io as skio
 
 from filter_manager import FilterManager
-from kalman_filter import initialize_kalman_filter
 from trackedObject import TrackedObject
 
 
 def get_plants_and_initialize_filter(image: np.ndarray,
                                      f_manager: FilterManager,
-                                     num_of_objects: int,
                                      no_object_frames_counter: int,
                                      filter: str) -> Tuple[list[TrackedObject], int, int]:
     """
@@ -21,7 +19,7 @@ def get_plants_and_initialize_filter(image: np.ndarray,
         Parameters:
             image (numpy.ndarray): The input grayscale image.
             f_manager (List[kalman_filter.KalmanFilterID] | List[ParticleFilter]): List of active Kalman filters.
-            num_of_objects (int): Number of detected objects to use as ID for new Kalman filter.
+
             no_object_frames_counter (int): Number of frames without detected plant in initialization area.
             filter (str): Name of the filter to initialize. 'particle'/'kalman'
 
@@ -44,11 +42,9 @@ def get_plants_and_initialize_filter(image: np.ndarray,
 
             if c_x < 150 and no_object_frames_counter > 3:
                 plant_in_initialization_area = True
-                num_of_objects += 1
 
                 if filter == "kalman":
-                    k_f = initialize_kalman_filter(tr_object, num_of_objects)
-                    # filters.append(k_f)
+                    f_manager.initialize_filter(o=tr_object)
 
                 elif filter == "particle":
                     height, width = image.shape

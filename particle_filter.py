@@ -8,19 +8,16 @@ class ParticleFilter:
     """
     A class to represent a Particle Filter.
     """
-    _id_counter = 0
 
-    def __init__(self, max_x, max_y):
+    def __init__(self, max_x: int, max_y: int, id: int):
         self.particles = None
         self.weights = None
         self.max_width = max_x
         self.max_height = max_y
         self.x = None
         self.y = None
-        self.number_of_particles = 1000
-        self.id = ParticleFilter._id_counter
+        self.id = id
         self.max_weight = 0
-        ParticleFilter._id_counter += 1
 
     def predict(self, std):
         """
@@ -94,7 +91,7 @@ class ParticleFilter:
                 self.weights[i] = 0
             else:
                 measurement_likelihood = image[int(particle[1]), int(particle[0])]
-                self.weights[i] = (self.weights[i] + 0.05) * (measurement_likelihood)
+                self.weights[i] = (self.weights[i] + 0.05) * measurement_likelihood
         self.weights += 1.e-300  # avoid round-off to zero
         self.weights /= sum(self.weights)  # normalize
         self.max_weight = max(self.weights)
@@ -215,6 +212,11 @@ class ParticleFilter:
     def get_centre_x(self):
         return self.x
 
+    def get_velocity_x(self):
+        pos = self.particles[:, 2]
+        mean_velocity = np.average(pos, weights=self.weights, axis=0)
+        return mean_velocity
+
 
 def create_uniform_particles(x_range, y_range, velocity_range_x, velocity_range_y, N):
     """
@@ -313,17 +315,17 @@ def test_velocity_changes_with_const_end(iterations):
     return x_values, y_values
 
 
-def run_pf_velocity_change(N, iters=40, sensor_std_err=.1, do_plot=True, plot_particles=True, x_lim=(0, 900),
+def run_pf_velocity_change(n, iters=40, sensor_std_err=.1, do_plot=True, plot_particles=True, x_lim=(0, 900),
                            ylim=(0, 300),
                            initial_x=None, dist_coef=1, vel_coef=1):
     plt.figure()
     pf = ParticleFilter()
-    pf.particles = create_uniform_particles((0, 3), (0, 3), (0.50, 5), N)
+    pf.particles = create_uniform_particles((0, 3), (0, 3), (0.50, 5), n)
 
     if plot_particles:
         alpha = .20
-        if N > 5000:
-            alpha *= np.sqrt(5000) / np.sqrt(N)
+        if n > 5000:
+            alpha *= np.sqrt(5000) / np.sqrt(n)
         plt.scatter(pf.particles[:, 0], pf.particles[:, 1], alpha=alpha, color='g')
 
     xs = []
@@ -351,13 +353,13 @@ def run_pf_velocity_change(N, iters=40, sensor_std_err=.1, do_plot=True, plot_pa
             pf.update(robot_pos)
 
         # resample if too few effective particles
-        if pf.neff() < N / 2:
+        if pf.neff() < n / 2:
             # indexes = multinomial_resample(weights)
             # pf.resample_from_index(weights, indexes)
             pf.resample_with_last_measurement(robot_velocity)
             resamples_count += 1
             color_of_estimate = "b"
-            assert np.allclose(pf.weights, 1 / N)
+            assert np.allclose(pf.weights, 1 / n)
 
         mu, var = pf.estimate()
         xs.append(mu)

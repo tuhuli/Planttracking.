@@ -6,5 +6,5 @@ __pycache__/
 
 tests/
 graphs/
-mat_functions.py
+utilities/mat_functions.py
 .idea/

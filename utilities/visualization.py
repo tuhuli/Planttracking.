@@ -2,11 +2,10 @@ from typing import List
 
 import cv2
 import numpy as np
-
-from kalman_filter import KalmanFilterID
-from particle_filter import ParticleFilter
-from preprocessing import initialize_tr
-from trackedObject import TrackedObject
+from filters.kalman_filter.kalman_filter import KalmanFilterID
+from filters.particle_filter.particle_filter import ParticleFilter
+from utilities.preprocessing import initialize_tr
+from utilities.trackedObject import TrackedObject
 
 
 def visualize_bb(data, path, start_range=1, end_range=100):

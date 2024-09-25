@@ -2,8 +2,7 @@ from typing import Tuple, List
 
 import numpy as np
 from filterpy.kalman import KalmanFilter
-
-from trackedObject import TrackedObject
+from utilities.trackedObject import TrackedObject
 
 
 class KalmanFilterID(KalmanFilter):

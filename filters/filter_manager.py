@@ -21,3 +21,6 @@ class FilterManager:
         for p_f in self.filters:
             if p_f.x > p_f.max_width - 40 or p_f.y > p_f.max_height or p_f.x < 0 or p_f.y < 0:
                 self.filters.remove(p_f)
+
+    def process_one_frame(self, grayscale_image, frame, evaluator, _):
+        pass

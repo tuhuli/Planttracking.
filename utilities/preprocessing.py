@@ -1,8 +1,7 @@
 from typing import List
 
 import pandas as pd
-
-from trackedObject import *
+from utilities.trackedObject import TrackedObject
 
 
 def get_one_object(data, objects_ids: List[int], start=False):
@@ -42,6 +41,6 @@ def centre_data(data):
 def initialize_tr(data):
     TR_objects = []
     for index, row in data.iterrows():
-        tr = TrackedObject(row['Centre_X'], row['Centre_Y'], row["Half_X"], row["Half_Y"], ID=str(row['Object_ID']))
+        tr = TrackedObject(row['Centre_X'], row['Centre_Y'], row["Half_X"], row["Half_Y"])
         TR_objects.append(tr)
     return TR_objects

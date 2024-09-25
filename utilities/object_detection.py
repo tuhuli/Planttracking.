@@ -1,17 +1,18 @@
-from typing import Tuple
+from typing import Tuple, Any
 
 import cv2
 import numpy as np
+from filters.filter_manager import FilterManager
+from filters.kalman_filter.kalman_filter_manager import KalmanFilterManager
+from filters.particle_filter.particle_filter_manager import ParticleFilterManager
 from skimage import io as skio
-
-from filter_manager import FilterManager
-from trackedObject import TrackedObject
+from utilities.trackedObject import TrackedObject
 
 
 def get_plants_and_initialize_filter(image: np.ndarray,
                                      f_manager: FilterManager,
                                      no_object_frames_counter: int,
-                                     filter: str) -> Tuple[list[TrackedObject], int, int]:
+                                     ) -> Tuple[list[TrackedObject], int]:
     """
         Creates a TrackedObject for each plant detected in an image. If no plant is in initialize area, initialize a 
         filter. Detected plant is a connected component with area of 3000 to 10000 pixels.
@@ -43,13 +44,12 @@ def get_plants_and_initialize_filter(image: np.ndarray,
             if c_x < 150 and no_object_frames_counter > 3:
                 plant_in_initialization_area = True
 
-                if filter == "kalman":
+                if isinstance(f_manager, KalmanFilterManager):
                     f_manager.initialize_filter(o=tr_object)
 
-                elif filter == "particle":
+                elif isinstance(f_manager, ParticleFilterManager):
                     height, width = image.shape
                     f_manager.initialize_filter(max_width=width, max_height=height, x=x, y=y, w=w, h=h)
-
 
             elif c_x < 150:
                 plant_in_initialization_area = True
@@ -59,10 +59,12 @@ def get_plants_and_initialize_filter(image: np.ndarray,
     else:
         no_object_frames_counter += 1
 
-    return plants, no_object_frames_counter, num_of_objects
+    return plants, no_object_frames_counter
 
 
-def get_object_stats(i: int, stats: np.ndarray, centroids: np.ndarray) -> Tuple[int, int, int, int, int, float, float]:
+def get_object_stats(i: int, stats: np.ndarray, centroids: np.ndarray) -> tuple[
+    np.ndarray[Any, Any], np.ndarray[Any, Any], np.ndarray[Any, Any], np.ndarray[Any, Any], np.ndarray[
+        Any, Any], Any, Any]:
     """
     Extracts the statistics and centroid coordinates of a connected component.
 

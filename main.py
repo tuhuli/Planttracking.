@@ -2,8 +2,7 @@ import argparse
 
 import cv2
 
-from kalman_filter_test import kalman_detection_on_video
-from particle_filter_test import particle_detection_on_video
+from detection_on_video import detection_on_video
 
 
 def use_filter_on_video(video_input_path: str, video_output_path: str,
@@ -24,12 +23,7 @@ def use_filter_on_video(video_input_path: str, video_output_path: str,
 
     read_cap = cv2.VideoCapture(video_input_path)
 
-    if filter_type == "particle":
-        particle_detection_on_video(new_cap, read_cap, out, grayscale, show_particles)
-    elif filter_type == 'kalman':
-        kalman_detection_on_video(new_cap, read_cap, out, grayscale)
-    else:
-        print("Wrong type of filter_type. Use: 'kalman'/'particle")
+    detection_on_video(new_cap, read_cap, out, grayscale, show_particles, filter_type)
 
     new_cap.release()
     read_cap.release()

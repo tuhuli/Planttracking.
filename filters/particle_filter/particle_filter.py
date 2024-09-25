@@ -30,7 +30,7 @@ class ParticleFilter:
         self.particles[:, 0] += self.particles[:, 2] + (np.random.randn(N) * std[0])
         self.particles[:, 1] += self.particles[:, 3] + (np.random.randn(N) * std[1])
         self.particles[:, 2] += np.random.randn(N) * std[2]
-        self.particles[:, 3] += (np.random.randn(N)) * std[3]
+        self.particles[:, 3] += np.random.randn(N) * std[3]
 
     def update(self, last_position):
         """

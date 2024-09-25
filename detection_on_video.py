@@ -21,13 +21,14 @@ def detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCapture, ou
         show_particles(bool): boolean to signal if the particles should be shown in the video
     """
     no_object_frames_counter = 10
-    num_of_objects = 0
+    frame = 0
+    evaluator = Evaluator("C:\SchoolApps\Bakalarka\Bakalarka_kod\ground_truth_data\ground_true_frames_SG19.json", 40)
+
     if filter_type == "particle":
         filter_manager = ParticleFilterManager()
     else:
         filter_manager = KalmanFilterManager()
-    frame = 0
-    evaluator = Evaluator("C:\SchoolApps\Bakalarka\Bakalarka_kod\ground_truth_data\ground_true_frames_SG19.json", 40)
+
     while True:
         out_ret, out_frame = new_cap.read()
         in_ret, in_frame = read_cap.read()
@@ -43,8 +44,8 @@ def detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCapture, ou
         g_image = np.array(in_frame[:, :, 0])
         plants, no_object_frames_counter = get_plants_and_initialize_filter(g_thresh_image,
                                                                             filter_manager,
-                                                                            no_object_frames_counter
-                                                                            )
+                                                                            no_object_frames_counter)
+
         filter_manager.process_one_frame(g_image, frame, evaluator, plants)
         filter_manager.end_of_frame_cleanup()
 

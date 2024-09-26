@@ -54,6 +54,8 @@ class KalmanFilterManager(FilterManager):
 
         white_noise_matrix = np.random.uniform(0.05, 0.2, size=(8, 8))
         f.Q = white_noise_matrix
+
+        self.filters.append(f)
         return f
 
     def process_one_frame(self, grayscale_image, frame, evaluator, plants):

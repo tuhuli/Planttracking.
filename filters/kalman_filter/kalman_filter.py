@@ -55,6 +55,9 @@ class KalmanFilterID(KalmanFilter):
     def get_centre_x(self):
         return self.x[0]
 
+    def get_centre_y(self):
+        return self.x[1]
+
 
 def kalman_tracking(tr_objects: List[TrackedObject], f: KalmanFilterID) -> None:
     """

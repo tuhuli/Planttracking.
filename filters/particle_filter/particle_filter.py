@@ -212,6 +212,9 @@ class ParticleFilter:
     def get_centre_x(self):
         return self.x
 
+    def get_centre_y(self):
+        return self.y
+
     def get_velocity_x(self):
         pos = self.particles[:, 2]
         mean_velocity = np.average(pos, weights=self.weights, axis=0)

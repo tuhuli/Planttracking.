@@ -53,7 +53,7 @@ def parse_arguments():
 if __name__ == "__main__":
     args = parse_arguments()
     if args.output_video_path is None:
-        args.output_video_path = "./output_tracked_video.mp4"
+        args.output_video_path = "./data/videos/output_tracked_video.mp4"
     if args.show_particles is None:
         args.show_particles = False
 

@@ -5,22 +5,22 @@ class FilterManager:
     def initialize_filter(self, **kwargs):
         pass
 
-    def end_of_frame_cleanup(self):
+    def end_of_frame_cleanup(self,height, width):
         self.remove_duplicate_filters()
-        self.remove_filter_outside_of_image()
+        self.remove_filter_outside_of_image(height, width)
 
     def remove_duplicate_filters(self):
-        for p_filter in self.filters:
-            for p_filter2 in self.filters:
-                if p_filter == p_filter2:
+        for f in self.filters:
+            for f2 in self.filters:
+                if f == f2:
                     continue
-                if abs(p_filter.x - p_filter2.x) < 50:
-                    self.filters.remove(p_filter2)
+                if abs(f.get_centre_x() - f2.get_centre_x()) < 50:
+                    self.filters.remove(f2)
 
-    def remove_filter_outside_of_image(self):
-        for p_f in self.filters:
-            if p_f.x > p_f.max_width - 40 or p_f.y > p_f.max_height or p_f.x < 0 or p_f.y < 0:
-                self.filters.remove(p_f)
+    def remove_filter_outside_of_image(self, height, width):
+        for f in self.filters:
+            if f.get_centre_x() > width - 40 or f.get_centre_y() > height or f.get_centre_x() < 0 or f.get_centre_y() < 0:
+                self.filters.remove(f)
 
     def process_one_frame(self, grayscale_image, frame, evaluator, _):
         pass

@@ -40,6 +40,8 @@ def create_synthetic_video(number_of_frames: int, video_location: str) -> None:
 
     start_x_pos = 0
     start_angle = radians(-45)
+    y_pos = int(height / 1.5)
+    sign = 1
 
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter(video_location, fourcc, fps, (width, height), isColor=False)
@@ -49,13 +51,20 @@ def create_synthetic_video(number_of_frames: int, video_location: str) -> None:
         if frame_num % frames_between_objects == 0:
             objects.append((start_x_pos, start_angle))
 
+        print(frame_num)
         frame = np.zeros((height, width), dtype=np.uint8)
         new_objects = []
         for i in range(len(objects)):
             x_pos, angle = objects[i]
 
             x_pos += 5
-            y_pos = int(height / 1.5)
+
+            if y_pos <100:
+                sign = +1
+            if y_pos > 540:
+                sign = -1
+            y_pos += 7*sign
+
             angle += 0.010
 
             if x_pos < 750:
@@ -75,4 +84,4 @@ def create_synthetic_video(number_of_frames: int, video_location: str) -> None:
     out.release()
 
 
-create_synthetic_video(1200, "synthetic_video.mp4")
+create_synthetic_video(1200, "synthetic_video_with_variable_y.mp4")

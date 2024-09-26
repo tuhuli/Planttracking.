@@ -2,8 +2,7 @@ from typing import Tuple, List
 
 import numpy as np
 from filterpy.kalman import KalmanFilter
-
-from trackedObject import TrackedObject
+from utilities.trackedObject import TrackedObject
 
 
 class KalmanFilterID(KalmanFilter):
@@ -56,50 +55,8 @@ class KalmanFilterID(KalmanFilter):
     def get_centre_x(self):
         return self.x[0]
 
-
-def initialize_kalman_filter(o: TrackedObject, id: int) -> KalmanFilterID:
-    """
-    Initializes a Kalman filter for a given object.
-
-    Parameters:
-        o (TrackedObject): The tracked object to initialize the Kalman filter with.
-        id (int): Unique identifier for the Kalman filter.
-
-    Returns:
-        KalmanFilterID: The initialized Kalman filter.
-    """
-    f = KalmanFilterID(dim_x=8, dim_z=4, id=id)
-    f.x = np.array([o.x, o.y, o.bb_x_half, o.bb_y_half, 5., 0., 0., 0.])
-    f.F = np.array([[1., 0., 0., 0., 1., 0., 0., 0.],
-                    [0., 1., 0., 0., 0., 1., 0., 0.],
-                    [0., 0., 1., 0., 0., 0., 1., 0.],
-                    [0., 0., 0., 1., 0., 0., 0., 1.],
-                    [0., 0., 0., 0., 1., 0., 0., 0.],
-                    [0., 0., 0., 0., 0., 1., 0., 0.],
-                    [0., 0., 0., 0., 0., 0., 1., 0.],
-                    [0., 0., 0., 0., 0., 0., 0., 1.]])
-
-    f.H = np.array([[1., 0., 0., 0., 0., 0., 0., 0.],
-                    [0., 1., 0., 0., 0., 0., 0., 0.],
-                    [0., 0., 1., 0., 0., 0., 0., 0.],
-                    [0., 0., 0., 1., 0., 0., 0., 0.]])
-
-    f.P *= np.array([[25., 0., 0., 0., 0., 0., 0., 0.],
-                     [0., 25., 0., 0., 0., 0., 0., 0.],
-                     [0., 0., 10., 0., 0., 0., 0., 0.],
-                     [0., 0., 0., 10., 0., 0., 0., 0.],
-                     [0., 0., 0., 0., 25., 0., 0., 0.],
-                     [0., 0., 0., 0., 0., 25., 0., 0.],
-                     [0., 0., 0., 0., 0., 0., 25., 0.],
-                     [0., 0., 0., 0., 0., 0., 0., 25.]])
-    f.R = np.array([[10., 0., 0., 0.],
-                    [0., 10., 0., 0.],
-                    [0., 0., 10000000., 0.],
-                    [0., 0., 0., 10000000.]])
-
-    white_noise_matrix = np.random.uniform(0.05, 0.2, size=(8, 8))
-    f.Q = white_noise_matrix
-    return f
+    def get_centre_y(self):
+        return self.x[1]
 
 
 def kalman_tracking(tr_objects: List[TrackedObject], f: KalmanFilterID) -> None:

@@ -1,7 +1,7 @@
 import json
 
 
-class Eval_class:
+class Evaluator:
     def __init__(self, path, variance):
         """
         Initializes the Evaluation class with two empty lists:

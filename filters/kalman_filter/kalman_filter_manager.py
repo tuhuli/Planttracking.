@@ -56,11 +56,16 @@ class KalmanFilterManager(FilterManager):
         f.Q = white_noise_matrix
 
         self.filters.append(f)
+        self.initialized_filter = f
         return f
 
     def process_one_frame(self, grayscale_image, frame, evaluator, plants):
         k_filter_plant_pair = self.pair_filter_with_plants(plants)
         for k_filter, plant in k_filter_plant_pair:
+            if k_filter == self.initialized_filter:
+                self.initialized_filter = None
+                continue
+
             measurement = None
 
             if plant is not None:

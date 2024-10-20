@@ -3,6 +3,8 @@ import numpy as np
 import scipy
 import scipy.stats
 
+from utilities.utility_functions import bilinear_interpolate
+
 
 class ParticleFilter:
     """
@@ -86,11 +88,12 @@ class ParticleFilter:
             image (numpy.ndarray): The image to update weights from.
         """
         for i, particle in enumerate(self.particles):
-            if (int(particle[0]) >= self.max_width or int(particle[0]) < 0
-                    or int(particle[1]) >= self.max_height or int(particle[1]) < 0):
+            x = particle[0]
+            y = particle[1]
+            if int(x) >= self.max_width or int(x) < 0 or int(y) >= self.max_height or int(y) < 0:
                 self.weights[i] = 0
             else:
-                measurement_likelihood = image[int(particle[1]), int(particle[0])]
+                measurement_likelihood = bilinear_interpolate(image, x, y)
                 self.weights[i] = (self.weights[i] + 0.05) * measurement_likelihood
         self.weights += 1.e-300  # avoid round-off to zero
         self.weights /= sum(self.weights)  # normalize
@@ -145,6 +148,25 @@ class ParticleFilter:
         """
             Perform systematic resampling.
         """
+
+        positions = (np.arange(len(self.particles)) + np.random.uniform(0, 1)) / len(self.particles)
+
+        cumulative_sum = np.cumsum(self.weights)
+        cumulative_sum[-1] = 1.0
+
+        indices = np.searchsorted(cumulative_sum, positions)
+        self.particles = self.particles[indices]
+        self.weights.fill(1.0 / len(self.weights))
+
+    def improved_systematic_resample(self):
+        """
+            Perform  ISR.
+        """
+
+        relowering_threshold = 0.0001
+        relowering_value = 1e-10
+
+        self.weights[np.where(self.weights < relowering_threshold)] = relowering_value
 
         positions = (np.arange(len(self.particles)) + np.random.uniform(0, 1)) / len(self.particles)
 

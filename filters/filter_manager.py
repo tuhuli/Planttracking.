@@ -1,6 +1,7 @@
 class FilterManager:
     def __init__(self):
         self.filters = []
+        self.initialized_filter = None
 
     def initialize_filter(self, **kwargs):
         pass
@@ -24,3 +25,5 @@ class FilterManager:
 
     def process_one_frame(self, grayscale_image, frame, evaluator, _):
         pass
+
+

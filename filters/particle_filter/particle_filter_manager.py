@@ -20,19 +20,24 @@ class ParticleFilterManager(FilterManager):
             velocity_range_x = (self.filters[-1].get_velocity_x() - 2, self.filters[-1].get_velocity_x() + 2)
 
         velocity_range_y = (-1, 1)
-        new_particle_filter.particles = create_uniform_particles((x - w // 2, x + w // 2), (y - h // 2, y + h // 2),
+        new_particle_filter.particles = create_uniform_particles((x, x + w ), (y, y + h),
                                                                  velocity_range_x, velocity_range_y,
                                                                  self.number_of_particles)
 
         new_particle_filter.weights = np.ones(self.number_of_particles) / self.number_of_particles
 
         self.filters.append(new_particle_filter)
+        self.initialized_filter = new_particle_filter
+        new_particle_filter.estimate()
         return new_particle_filter
 
     def process_one_frame(self, grayscale_image, frame, evaluator, _):
-        for p_f in self.filters:
+        for  p_f in self.filters:
+            if p_f == self.initialized_filter:
+                self.initialized_filter = None
+                continue
+
             p_f.predict((1, 0.1, 0.3, 0.05))
-            p_f.convert_particles_to_int()
             p_f.update_with_image(grayscale_image)
             # p_f.print_best_weights(300)
 
@@ -40,7 +45,7 @@ class ParticleFilterManager(FilterManager):
 
             if p_f.neff() < self.number_of_particles / 2:
                 print("nef==================================")
-                p_f.systematic_resample()
+                p_f.improved_systematic_resample()
                 # p_f.basic_resample_weights()
                 # assert np.allclose(p_f.weights, 1 / p_f.number_of_particles)
             print(f"position: {mu},  max_weight = {p_f.max_weight}")

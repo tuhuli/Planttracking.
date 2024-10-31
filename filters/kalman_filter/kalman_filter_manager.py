@@ -4,6 +4,7 @@ import numpy as np
 from filters.filter_manager import FilterManager
 from filters.kalman_filter.kalman_filter import KalmanFilterID
 from utilities.trackedObject import TrackedObject
+from filterpy.common import Q_discrete_white_noise
 
 
 class KalmanFilterManager(FilterManager):
@@ -23,37 +24,25 @@ class KalmanFilterManager(FilterManager):
         """
         self.id_counter += 1
 
-        f = KalmanFilterID(dim_x=8, dim_z=4, id=self.id_counter)
-        f.x = np.array([o.x, o.y, o.bb_x_half, o.bb_y_half, 5., 0., 0., 0.])
-        f.F = np.array([[1., 0., 0., 0., 1., 0., 0., 0.],
-                        [0., 1., 0., 0., 0., 1., 0., 0.],
-                        [0., 0., 1., 0., 0., 0., 1., 0.],
-                        [0., 0., 0., 1., 0., 0., 0., 1.],
-                        [0., 0., 0., 0., 1., 0., 0., 0.],
-                        [0., 0., 0., 0., 0., 1., 0., 0.],
-                        [0., 0., 0., 0., 0., 0., 1., 0.],
-                        [0., 0., 0., 0., 0., 0., 0., 1.]])
+        f = KalmanFilterID(dim_x=4, dim_z=2, id=self.id_counter)
+        f.x = np.array([o.x, o.y, 2., 0.])
+        f.F = np.array([[1., 0., 1., 0.],
+                        [0., 1., 0., 1.],
+                        [0., 0., 1., 0.],
+                        [0., 0., 0., 1.]])
 
-        f.H = np.array([[1., 0., 0., 0., 0., 0., 0., 0.],
-                        [0., 1., 0., 0., 0., 0., 0., 0.],
-                        [0., 0., 1., 0., 0., 0., 0., 0.],
-                        [0., 0., 0., 1., 0., 0., 0., 0.]])
+        f.H = np.array([[1., 0., 0., 0.],
+                        [0., 1., 0., 0.]])
 
-        f.P *= np.array([[25., 0., 0., 0., 0., 0., 0., 0.],
-                         [0., 25., 0., 0., 0., 0., 0., 0.],
-                         [0., 0., 10., 0., 0., 0., 0., 0.],
-                         [0., 0., 0., 10., 0., 0., 0., 0.],
-                         [0., 0., 0., 0., 25., 0., 0., 0.],
-                         [0., 0., 0., 0., 0., 25., 0., 0.],
-                         [0., 0., 0., 0., 0., 0., 25., 0.],
-                         [0., 0., 0., 0., 0., 0., 0., 25.]])
-        f.R = np.array([[10., 0., 0., 0.],
-                        [0., 10., 0., 0.],
-                        [0., 0., 10000000., 0.],
-                        [0., 0., 0., 10000000.]])
+        f.P *= np.array([[25., 0., 0., 0.],
+                         [0., 25., 0., 0.],
+                         [0., 0., 25., 0.],
+                         [0., 0., 0., 25.]])
 
-        white_noise_matrix = np.random.uniform(0.05, 0.2, size=(8, 8))
-        f.Q = white_noise_matrix
+        f.R = np.array([[25., 0.],
+                        [0., 25.]])
+
+        f.Q = np.eye(4)
 
         self.filters.append(f)
         self.initialized_filter = f
@@ -69,16 +58,10 @@ class KalmanFilterManager(FilterManager):
             measurement = None
 
             if plant is not None:
-                measurement = np.array([plant.x, plant.y, plant.bb_x_half, plant.bb_y_half])
+                measurement = np.array([plant.x, plant.y])
                 print(f"original = x:{plant.x} , y:{plant.y}")
 
             k_filter.update(measurement)
-
-            if k_filter.x[0] > len(grayscale_image[0]) or k_filter.x[0] < 0 or k_filter.frames_not_found > 15:
-                self.filters.remove(k_filter)
-
-            print("--------------")
-            print(f"prediction {k_filter.id} = {k_filter.x} \n\n\n")
 
             evaluator.check_if_found_plant(k_filter, frame, grayscale_image.shape[1])
             if evaluator.get_current_ground_truth_frame() == frame:

@@ -94,7 +94,7 @@ class ParticleFilter:
                 self.weights[i] = 0
             else:
                 measurement_likelihood = bilinear_interpolate(image, x, y)
-                self.weights[i] = (self.weights[i] + 0.05) * measurement_likelihood
+                self.weights[i] = (self.weights[i] + 0.0005) * measurement_likelihood
         self.weights += 1.e-300  # avoid round-off to zero
         self.weights /= sum(self.weights)  # normalize
         self.max_weight = max(self.weights)
@@ -175,7 +175,7 @@ class ParticleFilter:
 
         indices = np.searchsorted(cumulative_sum, positions)
         self.particles = self.particles[indices]
-        self.weights.fill(1.0 / len(self.weights))
+        #self.weights.fill(1.0 / len(self.weights))
 
     def neff(self):
         """

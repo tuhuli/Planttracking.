@@ -78,11 +78,17 @@ class SyntheticEvaluator():
         self.total_missed: int = 0
 
     def match_filters_in_frame(self, frame_number:int):
+        det_ids = set()
         for ground_truth_dic in self.ground_truth_data[frame_number]:
+            if ground_truth_dic["x"] <= 50 or ground_truth_dic["x"] > 630:
+                continue
+
             closest_det = None
             closest_distance = None
 
             for detection_dic in self.filter_data[frame_number]:
+                if detection_dic["x"] <= 50 or detection_dic["x"] > 630:
+                    continue
                 distance = abs(ground_truth_dic["x"] - detection_dic["x"])
 
                 if distance < 100 and (closest_det is None or closest_distance > distance):
@@ -99,6 +105,7 @@ class SyntheticEvaluator():
             self.total_matches += 1
             self.total_distance += closest_distance
             self.matches[frame_number].append((ground_truth_dic["id"], closest_det["id"], closest_distance))
+            det_ids.add(closest_det["id"])
 
             if frame_number > 1:
                 for ground_truth_id, detected_id, _ in self.matches[frame_number-1]:
@@ -108,7 +115,7 @@ class SyntheticEvaluator():
 
 
         # add false positive, if detection in not in matched
-        det_ids = [match[1] for match in self.matches[0]]
+
         for detection_dic in self.filter_data[frame_number]:
             if detection_dic["id"] not in det_ids:
                 self.total_false_positives += 1
@@ -129,14 +136,6 @@ class SyntheticEvaluator():
             if current_frame in self.ground_truth_data and current_frame in self.filter_data:
                 self.match_filters_in_frame(current_frame)
 
-            elif current_frame in self.ground_truth_data and current_frame not in self.filter_data:
-                self.total_missed += 1
-                self.missed[current_frame].append(self.ground_truth_data[current_frame])
-
-            elif current_frame not in self.ground_truth_data and current_frame in self.filter_data:
-                self.total_false_positives +=1
-                self.false_positive[current_frame].extend(self.filter_data[current_frame])
-
             current_frame += 1
         print("end_evaluation")
 
@@ -148,24 +147,32 @@ class SyntheticEvaluator():
 
     def calculate_MOTA(self):
         total_error = self.total_id_switches + self.total_missed + self.total_false_positives
-        mota = 1 - total_error / len(self.ground_truth_data.values())
+        mota = 1 - total_error / self.count_ground_truth()
 
 
         print(f"Total ID switches =  {self.total_id_switches}")
         print(f"Total false positives =  {self.total_false_positives}")
         print(f"Total missed detections = {self.total_missed}")
         print(f"Total errors (ID switches + false positive + missed detection) = {total_error}")
-        print(f"Total ground truth = {len(self.ground_truth_data.values())}")
+        print(f"Total ground truth = {self.count_ground_truth()}")
         print(f"MOTA = f{mota}")
 
-    def print_false_positives(self):
 
+    def count_ground_truth(self):
+        total = 0
+        for frame, g_t in self.ground_truth_data.items():
+            if g_t:
+                total += len(g_t)
+        return total
+
+    def print_false_positives(self):
         print("False positives (only frames with false positives):")
+        ids = set()
         for frame, false_positives in self.false_positive.items():
-            if false_positives:  # Check if there are any false positives in this frame
+            if false_positives:
                 print(false_positives)
-                false_positive_ids = [fp["id"] for fp in false_positives]
-                print(f"Frame {frame}: False Positive IDs: {false_positive_ids}")
+                false_positive_ids = [ids.add(fp["id"]) for fp in false_positives]
+        print(ids)
 
     def save_result(self, object_id: int, frame: int, x: int, y: int) -> None :
         """

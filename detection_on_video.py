@@ -47,7 +47,7 @@ def detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCapture, ou
                                                                             filter_manager,
                                                                             no_object_frames_counter)
 
-        filter_manager.process_one_frame(frame_number ,g_image, evaluator, plants)
+        filter_manager.process_one_frame(frame_number, g_image, evaluator, plants)
         height, width = g_thresh_image.shape
         filter_manager.end_of_frame_cleanup(height, width)
 

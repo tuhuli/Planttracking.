@@ -41,7 +41,7 @@ def get_plants_and_initialize_filter(image: np.ndarray,
 
             plants.append(tr_object)
 
-            if c_x < 150 and no_object_frames_counter > 3:
+            if c_x < 150 and no_object_frames_counter > 5:
                 plant_in_initialization_area = True
 
                 if isinstance(f_manager, KalmanFilterManager):

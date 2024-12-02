@@ -185,8 +185,12 @@ def show_particles_in_image(frame: np.ndarray, particle_filters: List[ParticleFi
         """
     for p_f in particle_filters:
         for i in range(len(p_f.particles)):
+
             color = (p_f.weights[i] / p_f.max_weight) * 255
             centre = int(p_f.particles[i][0]), int(p_f.particles[i][1])
+            if not grayscale:
+                centre = centre[0] * 2, centre[1] * 2
+
             cv2.circle(frame, centre, 1, (255 - color, 0, color), 2)
     return frame
 

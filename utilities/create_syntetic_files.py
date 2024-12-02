@@ -1,5 +1,7 @@
 from math import sin, cos, radians
+from typing import Dict, List, Tuple
 
+import json
 import cv2
 import numpy as np
 
@@ -25,7 +27,38 @@ def ellipse_formula(x: float, y: float, a: float, b: float, h: float, k: float, 
             ((((x - h) * sin(angle) - (y - k) * cos(angle)) ** 2) / (b ** 2)))
 
 
-def create_synthetic_video(number_of_frames: int, video_location: str) -> None:
+def write_ellipse_to_frame(x_pos:int, y_pos:int, angle: float, frame: np.ndarray) -> None:
+    height, width = frame.shape
+
+    ellipse_axes = (50, 110)
+
+    for y in range(y_pos - ellipse_axes[1], y_pos + ellipse_axes[1]):
+        for x in range(x_pos - ellipse_axes[1], x_pos + ellipse_axes[1]):
+            intensity = ellipse_formula(x, y, ellipse_axes[0], ellipse_axes[1], x_pos, y_pos, angle)
+
+            if intensity < 1 and 0 <= x < width and 0 <= y < height:
+                frame[y, x] = int(255 * (1 - intensity))
+
+
+def create_ground_truth_file(ellipses_id_frames: Dict[str, List[Dict[str, float]]], location_path: str) -> None:
+    """
+    Create a ground truth JSON file containing the frame-wise positions of ellipses.
+
+    Parameters:
+    ellipses_id_frames (Dict[str, List[Dict[str, float]]]):
+        A dictionary where:
+            - Keys are ellipse IDs (as strings).
+            - Values are lists of dictionaries, where each dictionary contains:
+                - "frame" (int): The frame number.
+                - "x" (float): The x position of the ellipse.
+                - "y" (float): The y position of the ellipse.
+    location_path (str): The base file path (without extension) for the JSON file.
+
+    """
+    with open(f"{location_path}_ground_truth.json", "w") as file:
+        json.dump(ellipses_id_frames, file, indent=4)
+
+def create_synthetic_video(number_of_frames: int, video_location: str, velocity:int, ) -> None:
     """
         Create a synthetic video with moving ellipses.
 
@@ -33,55 +66,52 @@ def create_synthetic_video(number_of_frames: int, video_location: str) -> None:
         number_of_frames (int): The total number of frames in the video.
         video_location (str): The file path where the video will be saved.
         """
+
     width, height = 672, 368
-    fps = 59.94
-    ellipse_axes = (50, 110)
-    frames_between_objects = 100
+    #fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    #out = cv2.VideoWriter(video_location, fourcc, 59.94, (width, height), isColor=False)
 
-    start_x_pos = 0
+    start_x_pos = -50
+    y_pos = 150
     start_angle = radians(-45)
-    y_pos = int(height / 1.5)
-    sign = 1
+    velocity_sign = 1
 
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(video_location, fourcc, fps, (width, height), isColor=False)
-
-    objects = []
+    id_counter = 1
+    frames_with_ellipses = {}
+    ellipses = []
     for frame_num in range(number_of_frames):
-        if frame_num % frames_between_objects == 0:
-            objects.append((start_x_pos, start_angle))
-
         print(frame_num)
         frame = np.zeros((height, width), dtype=np.uint8)
-        new_objects = []
-        for i in range(len(objects)):
-            x_pos, angle = objects[i]
+        new_ellipses = []
 
-            x_pos += 5
+        frames_with_ellipses[str(frame_num)] = []
 
-            if y_pos <100:
-                sign = +1
-            if y_pos > 540:
-                sign = -1
-            y_pos += 7*sign
+        if len(ellipses) == 0 or (ellipses[-1][0] >= 500 and len(ellipses) == 1):
+            ellipses.append((id_counter, start_x_pos, start_angle))
+            id_counter += 1
 
-            angle += 0.010
-
+        for id, x_pos, angle in ellipses:
+            x_pos += velocity
+            angle = radians(-45) + (x_pos / width) * (radians(45) - radians(-45))
             if x_pos < 750:
-                new_objects.append((x_pos, angle))
+                new_ellipses.append((id, x_pos, angle))
 
-            for y in range(-ellipse_axes[1], ellipse_axes[1]):
-                for x in range(-ellipse_axes[1], ellipse_axes[1]):
-                    intensity = ellipse_formula(x, y, ellipse_axes[0], ellipse_axes[1], 1, 1, angle)
+            #write_ellipse_to_frame(x_pos, y_pos, angle, frame)
 
-                    if intensity < 1 and 0 <= x_pos + x - ellipse_axes[0] < width and 0 <= y_pos + y - ellipse_axes[
-                        1] < height:
-                        frame[y_pos + y - ellipse_axes[1], x_pos + x - ellipse_axes[0]] = int(255 * (1 - intensity))
+            if velocity >= 20:
+                velocity_sign = -1
+            if velocity <= 2:
+                velocity_sign = 1
+            #velocity += velocity_sign
 
-        out.write(frame)
-        objects = new_objects
+            frames_with_ellipses[str(frame_num)].append({"id": id, "x": x_pos, "y": y_pos})
 
-    out.release()
+        #out.write(frame)
+        ellipses = new_ellipses
+
+    #out.release()
+
+    create_ground_truth_file(frames_with_ellipses, video_location[:-4])
 
 
-create_synthetic_video(1200, "synthetic_video_with_variable_y.mp4")
+create_synthetic_video(1600, "20_velocity_synthetic.mp4", 20)

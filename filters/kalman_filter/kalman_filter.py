@@ -59,25 +59,5 @@ class KalmanFilterID(KalmanFilter):
         return self.x[1]
 
 
-def kalman_tracking(tr_objects: List[TrackedObject], f: KalmanFilterID) -> None:
-    """
-    Applies Kalman filter tracking to a list of tracked objects.
-
-    Parameters:
-        tr_objects (List[TrackedObject]): List of tracked objects.
-        f (KalmanFilterID): The Kalman filter to use for tracking.
-    """
-    for i in range(1, len(tr_objects)):
-        o = tr_objects[i]
-        z = np.array([o.x, o.y, o.bb_x_half, o.bb_y_half])
-        f.predict()
-        f.update(z)
-
-        print("original = ")
-        print(o.x)
-        print(o.y)
-        print("")
-        print("--------------")
-        print("")
-        print("prediction = ")
-        print(f.x)
+    def print_information(self):
+        print(f"ID: {self.id} | position: {self.get_centre_x()} {self.get_centre_y()} | velocity: {self.x[2]} {self.x[3]}")

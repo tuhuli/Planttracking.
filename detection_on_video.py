@@ -3,7 +3,7 @@ import numpy as np
 
 from filters.kalman_filter.kalman_filter_manager import KalmanFilterManager
 from filters.particle_filter.particle_filter_manager import ParticleFilterManager
-from utilities.evaluation import Evaluator
+from utilities.evaluation import SyntheticEvaluator, SG_Evaluator
 from utilities.object_detection import get_plants_and_initialize_filter
 from utilities.visualization import show_particles_in_image, line_from_filter
 
@@ -21,8 +21,9 @@ def detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCapture, ou
         show_particles(bool): boolean to signal if the particles should be shown in the video
     """
     no_object_frames_counter = 10
-    frame = 0
-    evaluator = Evaluator(".\data\ground_truth_data\ground_true_frames_SG19.json", 40)
+    frame_number = 0
+    #evaluator = Evaluator(".\data\ground_truth_data\ground_true_frames_SG19.json", 40)
+    evaluator = SyntheticEvaluator(".\data\ground_truth_data\SG_annotations.json")
 
     if filter_type == "particle":
         filter_manager = ParticleFilterManager()
@@ -36,7 +37,7 @@ def detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCapture, ou
         if not out_ret or not in_ret:
             break
 
-        threshold = 200
+        threshold = 180
         thresh_image = np.where(in_frame < threshold, 0, in_frame)
 
         # Turn image to grayscale
@@ -46,12 +47,13 @@ def detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCapture, ou
                                                                             filter_manager,
                                                                             no_object_frames_counter)
 
-        filter_manager.process_one_frame(g_image, frame, evaluator, plants)
+        filter_manager.process_one_frame(frame_number ,g_image, evaluator, plants)
         height, width = g_thresh_image.shape
         filter_manager.end_of_frame_cleanup(height, width)
 
         if grayscale:
-            image = in_frame
+            image = thresh_image
+            #image = in_frame
         else:
             image = out_frame
 
@@ -63,6 +65,9 @@ def detection_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCapture, ou
         # io.show()
         out.write(image)
 
-        frame += 1
+        frame_number += 1
 
-    evaluator.print_results()
+    evaluator.evaluate()
+    evaluator.print_false_positives()
+    evaluator.calculate_MOTA()
+    evaluator.calculate_MOTP()

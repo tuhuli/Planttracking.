@@ -23,7 +23,7 @@ class FilterManager:
             if f.get_centre_x() > width - 40 or f.get_centre_y() > height or f.get_centre_x() < 0 or f.get_centre_y() < 0:
                 self.filters.remove(f)
 
-    def process_one_frame(self, grayscale_image, frame, evaluator, _):
+    def process_one_frame(self, frame_number, grayscale_image, evaluator, _):
         pass
 
 

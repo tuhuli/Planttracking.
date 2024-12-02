@@ -7,4 +7,5 @@ __pycache__/
 tests/
 graphs/
 utilities/mat_functions.py
-.idea/
+../.idea/
+get_threshold.py

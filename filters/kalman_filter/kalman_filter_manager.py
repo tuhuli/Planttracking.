@@ -15,7 +15,7 @@ class KalmanFilterManager(FilterManager):
 
     def initialize_filter(self, o: TrackedObject) -> KalmanFilterID:
         """
-        Initializes a Kalman filter for a given object.
+        Initializes a Kalman filter with an object.
     
         Parameters:
             o (TrackedObject): The tracked object to initialize the Kalman filter with.
@@ -53,6 +53,14 @@ class KalmanFilterManager(FilterManager):
         return f
 
     def process_one_frame(self,frame_number: int, grayscale_image, evaluator: SyntheticEvaluator, plants):
+        """
+
+        :param frame_number:
+        :param grayscale_image:
+        :param evaluator:
+        :param plants:
+        :return:
+        """
         k_filter_plant_pair = self.pair_filter_with_plants(plants)
         for k_filter, plant in k_filter_plant_pair:
             if k_filter == self.initialized_filter:
@@ -68,13 +76,6 @@ class KalmanFilterManager(FilterManager):
             k_filter.update(measurement)
             evaluator.save_result(k_filter.id, frame_number, k_filter.x[0], k_filter.x[1])
 
-#            if k_filter.id >= 110:
-     #           k_filter.print_information()
-    #        evaluator.check_if_found_plant(k_filter, frame, grayscale_image.shape[1])
-    #        if evaluator.get_current_ground_truth_frame() == frame_number:
-     #           print(f"HAS PLANT: {evaluator.get_current_ground_truth_frame()}")
-     #           print(f"lower_boundary = {grayscale_image.shape[1] // 2 - evaluator.variance}")
-     #          print(f"upper_boundary = {grayscale_image.shape[1] // 2 + evaluator.variance}")
 
     def pair_filter_with_plants(self, plants: List[TrackedObject]) -> List[Tuple[KalmanFilterID, TrackedObject]]:
         """

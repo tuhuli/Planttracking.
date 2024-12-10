@@ -18,7 +18,7 @@ def get_plants_and_initialize_filter(image: np.ndarray,
         filter. Detected plant is a connected component with area of 3000 to 10000 pixels.
 
         Parameters:
-            image (numpy.ndarray): The input grayscale image.
+            image (numpy.ndarray): T input grayscale image.
             f_manager (List[kalman_filter.KalmanFilterID] | List[ParticleFilter]): List of active Kalman filters.
 
             no_object_frames_counter (int): Number of frames without detected plant in initialization area.

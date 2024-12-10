@@ -2,68 +2,13 @@ import json
 from typing import List, Dict, Tuple
 
 
-class SG_Evaluator:
-    def __init__(self, path, variance):
-        """
-        Initializes the Evaluation class with two empty lists:
-        - found_objects: Stores objects that were found.
-        - not_found_objects: Stores objects that were not found.
-        """
-        self.found_objects = []
-        self.not_found_objects = []
-        self.ground_truth_list = self.load_sg_data(path)
-        self.ground_truth_index = 0
-        self.variance = variance
-
-    def is_in_centre(self, filter, image_width):
-        image_centre = image_width // 2
-        lower_boundary = image_centre - self.variance
-        upper_boundary = image_centre + self.variance
-        return lower_boundary < filter.get_centre_x() < upper_boundary
-
-    def check_if_found_plant(self, filter, frame_index, image_width) -> None:
-        if self.ground_truth_index > len(self.ground_truth_list):
-            return
-
-        if frame_index == self.get_current_ground_truth_frame() and self.is_in_centre(filter, image_width):
-            self.ground_truth_index += 1
-            self.found_objects.append((filter.id, frame_index))
-
-        elif frame_index > self.get_current_ground_truth_frame():
-            self.not_found_objects.append(frame_index)
-            self.ground_truth_index += 1
-
-    def get_current_ground_truth_frame(self):
-        if self.ground_truth_index >= len(self.ground_truth_list):
-            return -1
-        return self.ground_truth_list[self.ground_truth_index]
-
-    def print_results(self):
-        """
-               Prints the results in a descriptive format:
-               1. Number of not found objects.
-               2. List of not found objects.
-               3. Number of found objects.
-               4. List of found objects.
-               """
-        print("Number of not found objects:")
-        print(len(self.not_found_objects))
-        print("\nList of not found objects (frame indices):")
-        print(self.not_found_objects)
-        print("\nNumber of found objects:")
-        print(len(self.found_objects))
-        print("\nList of found objects (filter ID, frame index):")
-        print(self.found_objects)
-
-    def load_sg_data(self,path: str) -> list[int]:
-        with open(path, 'r') as file:
-            data = json.load(file)
-            return data
+def is_in_evaluation_area(position_dict: Dict[str, int]) -> bool:
+    min_position = 50
+    max_position = 622
+    return max_position > position_dict["x"] > min_position
 
 
-
-
-class SyntheticEvaluator():
+class SyntheticEvaluator:
     def __init__(self, path: str):
         self.filter_data = {}
         self.ground_truth_data: Dict[int, List[Dict[str, int]]] = self.load_ground_truth_data(path)
@@ -76,22 +21,24 @@ class SyntheticEvaluator():
         self.total_false_positives: int = 0
         self.total_id_switches: int = 0
         self.total_missed: int = 0
+        self.total_used_ground_truth: int = 0
 
     def match_filters_in_frame(self, frame_number:int):
         det_ids = set()
         for ground_truth_dic in self.ground_truth_data[frame_number]:
-            if ground_truth_dic["x"] <= 50 or ground_truth_dic["x"] > 630:
+            if not is_in_evaluation_area(ground_truth_dic):
                 continue
+            self.total_used_ground_truth += 1
 
             closest_det = None
             closest_distance = None
 
             for detection_dic in self.filter_data[frame_number]:
-                if detection_dic["x"] <= 50 or detection_dic["x"] > 630:
+                if not is_in_evaluation_area(detection_dic):
                     continue
                 distance = abs(ground_truth_dic["x"] - detection_dic["x"])
 
-                if distance < 100 and (closest_det is None or closest_distance > distance):
+                if distance < 50 and (closest_det is None or closest_distance > distance):
                     closest_det = detection_dic
                     closest_distance = distance
 
@@ -101,7 +48,7 @@ class SyntheticEvaluator():
                 self.missed[frame_number].append(ground_truth_dic)
                 continue
 
-            #make a match and check id switching
+            # make a match and check id switching
             self.total_matches += 1
             self.total_distance += closest_distance
             self.matches[frame_number].append((ground_truth_dic["id"], closest_det["id"], closest_distance))
@@ -113,14 +60,11 @@ class SyntheticEvaluator():
                         self.total_id_switches += 1
                         self.id_switches[frame_number].append((ground_truth_id, ground_truth_dic["id"], detected_id))
 
-
         # add false positive, if detection in not in matched
-
         for detection_dic in self.filter_data[frame_number]:
-            if detection_dic["id"] not in det_ids:
+            if detection_dic["id"] not in det_ids and is_in_evaluation_area(detection_dic):
                 self.total_false_positives += 1
                 self.false_positive[frame_number].append(detection_dic)
-
 
     def evaluate(self):
         print("start evaluation")
@@ -147,23 +91,16 @@ class SyntheticEvaluator():
 
     def calculate_MOTA(self):
         total_error = self.total_id_switches + self.total_missed + self.total_false_positives
-        mota = 1 - total_error / self.count_ground_truth()
-
+        MOTA = 1 - total_error / self.total_used_ground_truth
 
         print(f"Total ID switches =  {self.total_id_switches}")
         print(f"Total false positives =  {self.total_false_positives}")
         print(f"Total missed detections = {self.total_missed}")
         print(f"Total errors (ID switches + false positive + missed detection) = {total_error}")
-        print(f"Total ground truth = {self.count_ground_truth()}")
-        print(f"MOTA = f{mota}")
+        print(f"Total ground truth = {self.total_used_ground_truth}")
+        print(f"MOTA = f{MOTA}")
+        print(self.missed)
 
-
-    def count_ground_truth(self):
-        total = 0
-        for frame, g_t in self.ground_truth_data.items():
-            if g_t:
-                total += len(g_t)
-        return total
 
     def print_false_positives(self):
         print("False positives (only frames with false positives):")

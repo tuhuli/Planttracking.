@@ -1,12 +1,21 @@
 import argparse
-
 import cv2
 
-from detection_on_video import detection_on_video
+from detection_on_video import tracking_on_video
 
 
 def use_filter_on_video(video_input_path: str, video_output_path: str,
-                        color_video_path: str, filter_type: str, show_particles) -> None:
+                        color_video_path: str, filter_type: str, show_particles: bool) -> None:
+    """
+        Applies a tracking filter to a video and saves the processed output.
+
+        Parameters:
+            video_input_path (str): Path to the input video.
+            video_output_path (str): Path to save the output video.
+            color_video_path (str): Path to the original color video, used if not in grayscale mode.
+            filter_type (str): Type of filter to use for tracking ("kalman" or "particle").
+            show_particles (bool): Boolean representing if the particle positions are shown in the output.
+        """
     grayscale = color_video_path is None
 
     if grayscale:
@@ -23,7 +32,7 @@ def use_filter_on_video(video_input_path: str, video_output_path: str,
 
     read_cap = cv2.VideoCapture(video_input_path)
 
-    detection_on_video(new_cap, read_cap, out, grayscale, show_particles, filter_type)
+    tracking_on_video(new_cap, read_cap, out, grayscale, show_particles, filter_type)
 
     new_cap.release()
     read_cap.release()
@@ -32,14 +41,28 @@ def use_filter_on_video(video_input_path: str, video_output_path: str,
     cv2.destroyAllWindows()
 
 
-def parse_arguments():
+def parse_arguments() -> argparse.Namespace:
+    """
+        Parses arguments for the script.
+
+        Arguments:
+            filter_type (str): The type of filter to use for tracking ("kalman" or "particle").
+            video_path (str): Path to the video file.
+
+        Optional Arguments:
+            --original_video_path (str): Path to the original color video for non-grayscale processing.
+            --output_video_path (str): Path to store the new created video file.
+            --show_particles (bool): A boolean to signal if the video will show particles.
+
+        Returns:
+            argparse.Namespace: Parsed arguments with their values.
+    """
+
     parser = argparse.ArgumentParser(description='Process video and evaluate results.')
 
-    # Required argument
     parser.add_argument("filter_type", type=str, help='Specify filter_type: kalman/particle')
     parser.add_argument('video_path', type=str, help='Path to the video file')
 
-    # Optional arguments
     parser.add_argument('--original_video_path', type=str, help='Path to the original video file')
     parser.add_argument('--output_video_path', type=str,
                         help='Path to store the new created video file, if empty it will be stored in the current '
@@ -54,6 +77,7 @@ if __name__ == "__main__":
     args = parse_arguments()
     if args.output_video_path is None:
         args.output_video_path = "./data/videos/output_tracked_video.mp4"
+
     if args.show_particles is None:
         args.show_particles = False
 

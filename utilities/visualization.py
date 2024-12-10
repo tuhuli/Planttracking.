@@ -4,128 +4,21 @@ import cv2
 import numpy as np
 from filters.kalman_filter.kalman_filter import KalmanFilterID
 from filters.particle_filter.particle_filter import ParticleFilter
-from utilities.preprocessing import initialize_tr
-from utilities.trackedObject import TrackedObject
-
-
-def visualize_bb(data, path, start_range=1, end_range=100):
-    for frame_number in range(start_range, end_range):
-        # Load an image
-        image = cv2.imread(path + f"{frame_number:06d}.jpg")
-
-        frame_data = data[data['Frame'] == frame_number]
-        TR_objects = initialize_tr(frame_data)
-
-        for tr_object in TR_objects:
-            (pt1, _, _, pt2) = tr_object.get_bb()
-
-            cv2.rectangle(image, int(pt1), int(pt2), (0, 255, 0), 2)
-
-            text_size = cv2.getTextSize(tr_object.ID, cv2.FONT_HERSHEY_SIMPLEX, 0.8, 2)[0]
-            font_scale = min(int(tr_object.bb_x_half * 2 / text_size[0]),
-                             int(tr_object.bb_y_half * 2 / text_size[1])) / 1.5
-
-            text_position = (int(pt1[0]), int(pt1[1] - 5))  # Adjust the position for the scaled text
-            cv2.putText(image, tr_object.ID, text_position, cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255), 2)
-
-        cv2.imshow('Image with Bounding Box', image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-
-
-def bb_from_kalman_filter(image: np.ndarray, k_filters: List[KalmanFilterID],
-                          grayscale: bool = True) -> np.ndarray:
-    """
-    Draws bounding boxes from Kalman filters on the given image.
-
-    Parameters:
-        image (np.ndarray): The input image on which bounding boxes are drawn.
-        k_filters (List[KalmanFilterID]): List of active Kalman filters.
-        grayscale (bool): Whether the image is grayscale. Default is True.
-
-    Returns:
-        np.ndarray: Image with drawn bounding boxes.
-    """
-    for k_filter in k_filters:
-
-        if grayscale:
-            (pt1, _, _, pt2) = k_filter.get_bb()
-        else:
-            (pt1, _, _, pt2) = k_filter.get_color_bb()
-
-        cv2.rectangle(image, pt1, pt2, (0, 255, 0), 2)
-
-        text_size = cv2.getTextSize(str(k_filter.id), cv2.FONT_HERSHEY_SIMPLEX, 0.8, 2)[0]
-        font_scale = min(int(k_filter.x[2] * 2 / text_size[0]), int(k_filter.x[3] * 2 / text_size[1])) / 1.5
-
-        # Write Object ID scaled with the bounding box size
-        text_position = (int(pt1[0]), int(pt1[1] - 5))
-        cv2.putText(image, str(k_filter.id), text_position, cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255), 2)
-    return image
-
-
-def bb_from_tr_object(image: np.ndarray, tr_objects: List[TrackedObject],
-                      grayscale: bool = True) -> np.ndarray:
-    """
-    Draws bounding boxes from tracked objects on the given image.
-
-    Parameters:
-        image (np.ndarray): The input image on which bounding boxes are drawn.
-        tr_objects (List[TrackedObject]): List of tracked objects.
-        grayscale (bool): Whether the image is grayscale. Default is True.
-
-    Returns:
-        np.ndarray: Image with drawn bounding boxes.
-    """
-    for tr_object in tr_objects:
-        if grayscale:
-            (pt1, _, _, pt2) = tr_object.get_bb()
-        else:
-            (pt1, _, _, pt2) = tr_object.get_color_bb()
-
-        cv2.rectangle(image, pt1, pt2, (0, 0, 255), 2)
-
-    return image
-
-
-def bb_from_particle_filter(image: np.ndarray, p_filters: List[ParticleFilter],
-                            grayscale: bool = True) -> np.ndarray:
-    """
-    Draws bounding boxes from particle filters on the given image.
-
-    Parameters:
-        image (np.ndarray): The input image on which bounding boxes are drawn.
-        p_filters (List[object]): List of particle filters.
-        grayscale (bool): Whether the image is grayscale. Default is True.
-
-    Returns:
-        np.ndarray: Image with drawn bounding boxes.
-    """
-    for particle_filter in p_filters:
-        if grayscale:
-            (pt1, _, _, pt2) = particle_filter.get_bb(30)
-        else:
-            (pt1, _, _, pt2) = particle_filter.get_color_bb()
-
-        cv2.rectangle(image, pt1, pt2, (0, 0, 255), 2)
-
-        text_position = (int(pt1[0]), int(pt1[1] - 5))
-        cv2.putText(image, str(particle_filter.id), text_position, cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2)
-    return image
+from utilities.evaluation import SyntheticEvaluator
 
 
 def line_from_filter(image: np.ndarray, filters: List[ParticleFilter] | List[KalmanFilterID],
-                     grayscale: bool = True) -> np.ndarray:
+                     grayscale: bool) -> np.ndarray:
     """
-    Draws bounding boxes from particle filters on the given image.
+    Draws vertical lines in the x position of filters and ID.
 
     Parameters:
-        image (np.ndarray): The input image on which bounding boxes are drawn.
-        p_filters (List[object]): List of particle filters.
-        grayscale (bool): Whether the image is grayscale. Default is True.
+        image (np.ndarray): The input image.
+        filters (List[ParticleFilter] | List[KalmanFilterID]): List of filters.
+        grayscale (bool): Boolean representing, if the image is grayscale.
 
     Returns:
-        np.ndarray: Image with drawn bounding boxes.
+        np.ndarray: Image with lines and IDs of filters.
     """
 
     for tracking_filter in filters:
@@ -134,51 +27,21 @@ def line_from_filter(image: np.ndarray, filters: List[ParticleFilter] | List[Kal
         else:
             x = tracking_filter.get_centre_x() * 2
 
-        color = (255, 0, 255)  # White color
-        thickness = 2  # Line thickness
-
-        # Draw the vertical line on the image
-        image = cv2.line(image, (x, 0), (x, image.shape[0]), color, thickness)
-
+        image = cv2.line(image, (x, 0), (x, image.shape[0]), (255, 0, 255), 2)
         text_position = (int(x), int(100))
         cv2.putText(image, str(tracking_filter.id), text_position, cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2)
 
     return image
 
 
-def show_bounding_boxes_in_frame(frame: np.ndarray, color_frame: np.ndarray,
-                                 plants: List[TrackedObject], filters: List[KalmanFilterID],
-                                 out: cv2.VideoWriter, grayscale: bool) -> None:
+def show_particles_in_image(frame: np.ndarray, particle_filters: List[ParticleFilter], grayscale: bool) -> np.ndarray:
     """
-    Shows and writes bounding boxes in a video frame.
-
-    Parameters:
-        frame (np.ndarray): The grayscale frame image.
-        color_frame (np.ndarray): The color frame image.
-        plants (List[TrackedObject]): List of detected plant objects.
-        filters (List[kalman_filter.KalmanFilterID]): List of active Kalman filters.
-        out (cv2.VideoWriter): VideoWriter object to save the modified frame.
-        grayscale (bool): Whether the frame is grayscale.
-
-    """
-    if grayscale:
-        out_frame = frame
-    else:
-        out_frame = color_frame
-
-    out_frame = bb_from_tr_object(out_frame, plants, grayscale)
-    out_frame = bb_from_kalman_filter(out_frame, filters, grayscale)
-    out.write(out_frame)
-
-
-def show_particles_in_image(frame: np.ndarray, particle_filters: List[ParticleFilter], grayscale: bool):
-    """
-        Draws particles on the given frame with color intensity proportional to their weights.
+        Draws particles of filters.
 
         Args:
-            frame (np.ndarray): The input image frame on which particles will be drawn.
-            particle_filters (List[ParticleFilter]): List of ParticleFilters containing particles and their weights.
-            grayscale (bool): Whether the frame is in grayscale.
+            frame (np.ndarray): The input image.
+            particle_filters (List[ParticleFilter]): List of ParticleFilters.
+            grayscale (bool): Boolean representing, if the image is grayscale.
 
         Returns:
             np.ndarray: The frame with particles drawn on it.
@@ -195,19 +58,47 @@ def show_particles_in_image(frame: np.ndarray, particle_filters: List[ParticleFi
     return frame
 
 
-def show_particle_centre(frame: np.ndarray, particle_filters: List[ParticleFilter], grayscale: bool):
+def show_particle_centre(frame: np.ndarray, particle_filters: List[ParticleFilter], grayscale: bool) -> np.ndarray:
     """
-        Draws the central point of each particle filter on the given frame.
+        Draws the center of particle filters.
 
         Args:
-            frame (np.ndarray): The input image frame on which the central points will be drawn.
-            particle_filters (List[ParticleFilter]): List of ParticleFilter objects containing the central points.
-            grayscale (bool): Whether the frame is in grayscale or not (affects color representation).
+            frame (np.ndarray): The input image.
+            particle_filters (List[ParticleFilter]): List of ParticleFilters.
+            grayscale (bool): Boolean representing, if the image is grayscale.
 
         Returns:
-            np.ndarray: The frame with central points drawn on it.
+            np.ndarray: The frame with particle center
     """
 
     for p_f in particle_filters:
-        cv2.circle(frame, (p_f.x, p_f.y), 7, (0, 0, 255), 4)
+        center = p_f.x, p_f.y
+        if not grayscale:
+            center = center[0] * 2, center[1] * 2
+        cv2.circle(frame, center, 7, (0, 0, 255), 4)
     return frame
+
+
+def show_ground_truth_location(frame: np.ndarray, frame_number: int, evaluator: SyntheticEvaluator,
+                               grayscale: bool) -> None:
+    """
+        Draws ground truth annotations with ID
+
+        Parameters:
+            frame (np.ndarray): The input image.
+            frame_number (int): The current frame number.
+            evaluator (SyntheticEvaluator): An evaluator containing ground truth data for all frames.
+            grayscale (bool):Boolean representing, if the image is grayscale.
+
+        """
+    if frame_number in evaluator.ground_truth_data:
+        for annotation in evaluator.ground_truth_data[frame_number]:
+            x, y = annotation["x"], annotation["y"]
+            if not grayscale:
+                x = x * 2
+                y = y * 2
+            cv2.circle(frame, (x , y), 5, (0, 0, 255), -1)  # Mark the point
+            cv2.putText(frame, f'ID: {annotation["id"]}', (x + 10, y ), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
+                        (255, 0, 0), 1)
+
+    cv2.line(frame, (622, 0), (622, frame.shape[0]), (0, 255, 255), 2)

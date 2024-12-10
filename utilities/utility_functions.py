@@ -1,9 +1,17 @@
 import numpy as np
 
 
-def bilinear_interpolate(img, x, y):
+def bilinear_interpolate(img: np.ndarray, x: float, y: float) -> float:
     """
-    Perform bilinear interpolation for a single point (x, y) on the image img.
+    Perform bilinear interpolation for a single point (x, y) on the image.
+
+    Parameters:
+        img (np.ndarray): The input image.
+        x (float): The x-coordinate of the point.
+        y (float): The y-coordinate of the point.
+
+    Returns:
+        float: The interpolated intensity value at position (x, y).
     """
     x0 = int(np.floor(x))
     x1 = min(x0 + 1, img.shape[1] - 1)

@@ -37,11 +37,11 @@ class ParticleFilterManager(FilterManager):
                 self.initialized_filter = None
                 continue
 
-            p_f.predict((1, 0.1, 0.3, 0.05))
+            p_f.predict((1, 0.1, 1, 0.05))
             p_f.update_with_image(grayscale_image)
-            evaluator.save_result(p_f.id, frame_number, p_f.x, p_f.y)
 
             mu, var = p_f.estimate()
+            evaluator.save_result(p_f.id, frame_number, p_f.x, p_f.y)
 
             if p_f.neff() < self.number_of_particles / 2:
                 print(f"Neff = {p_f.neff()}")

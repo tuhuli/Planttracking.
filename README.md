@@ -1,4 +1,4 @@
-To run the program, type of filter and the path to the CNN output video is needed.
+oTo run the program, type of filter and the path to the CNN output video is needed.
 
 ```markdown
 ## Usage

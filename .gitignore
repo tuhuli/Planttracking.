@@ -8,4 +8,5 @@ tests/
 graphs/
 utilities/mat_functions.py
 ../.idea/
-get_threshold.py
+utilities/get_threshold.py
+utilities/get_frame.py

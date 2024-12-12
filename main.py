@@ -2,10 +2,11 @@ import argparse
 import cv2
 
 from detection_on_video import tracking_on_video
+from utilities.evaluation import SyntheticEvaluator
 
 
 def use_filter_on_video(video_input_path: str, video_output_path: str,
-                        color_video_path: str, filter_type: str, show_particles: bool) -> None:
+                        color_video_path: str, filter_type: str, ground_truth_path: str | None, show_particles: bool) -> None:
     """
         Applies a tracking filter to a video and saves the processed output.
 
@@ -32,7 +33,12 @@ def use_filter_on_video(video_input_path: str, video_output_path: str,
 
     read_cap = cv2.VideoCapture(video_input_path)
 
-    tracking_on_video(new_cap, read_cap, out, grayscale, show_particles, filter_type)
+    evaluator = None
+    if ground_truth_path is not None:
+        evaluator = SyntheticEvaluator(ground_truth_path)
+
+
+    tracking_on_video(new_cap, read_cap, out, grayscale, show_particles, filter_type, evaluator)
 
     new_cap.release()
     read_cap.release()
@@ -67,6 +73,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument('--output_video_path', type=str,
                         help='Path to store the new created video file, if empty it will be stored in the current '
                              'directory')
+    parser.add_argument('--evaluation_file_path', type=str, help='Path to the ground truth file')
     parser.add_argument('--show_particles', action='store_true',
                         help=' A boolean to signal if the video will show particles')
 
@@ -81,5 +88,5 @@ if __name__ == "__main__":
     if args.show_particles is None:
         args.show_particles = False
 
-    use_filter_on_video(args.video_path, args.output_video_path, args.original_video_path, args.filter_type,
+    use_filter_on_video(args.video_path, args.output_video_path, args.original_video_path, args.filter_type, args.evaluation_file_path ,
                         args.show_particles)

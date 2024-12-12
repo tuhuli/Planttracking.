@@ -9,7 +9,7 @@ from utilities.visualization import show_particles_in_image, line_from_filter, s
 
 
 def tracking_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCapture, out: cv2.VideoWriter,
-                       grayscale: bool, show_particles: bool, filter_type: str) -> None:
+                       grayscale: bool, show_particles: bool, filter_type: str, evaluator: SyntheticEvaluator) -> None:
     """
     Tracks objects in a video using either Particle or Kalman filters and saves the output.
 
@@ -23,7 +23,6 @@ def tracking_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCapture, out
     """
     no_object_frames_counter = 10
     frame_number = 0
-    evaluator = SyntheticEvaluator(".\data\ground_truth_data\SG_annotations.json")
 
     if filter_type == "particle":
         filter_manager = ParticleFilterManager()
@@ -59,15 +58,18 @@ def tracking_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCapture, out
             image = out_frame
 
         image = line_from_filter(image, filter_manager.filters, grayscale)
-        show_ground_truth_location(image, frame_number, evaluator, grayscale)
+
+        if evaluator is not None:
+            show_ground_truth_location(image, frame_number, evaluator, grayscale)
+
         if show_particles:
             image = show_particles_in_image(image, filter_manager.filters, grayscale)
 
         out.write(image)
-
         frame_number += 1
 
-    evaluator.evaluate()
-    #evaluator.print_false_positives()
-    evaluator.calculate_MOTA()
-    evaluator.calculate_MOTP()
+    if evaluator is not None:
+        evaluator.evaluate()
+        #evaluator.print_false_positives()
+        evaluator.calculate_MOTA()
+        evaluator.calculate_MOTP()

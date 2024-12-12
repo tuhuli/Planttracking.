@@ -1,4 +1,4 @@
-oTo run the program, type of filter and the path to the CNN output video is needed.
+To run the program, type of filter and the path to the CNN output video is needed.
 
 ```markdown
 ## Usage
@@ -10,7 +10,12 @@ To run the script: "python main.py 'kalman'/'particle' "row_SG19_small_predikce.
 ## Arguments for extended use are:
 
 --original_video_path "PATH_TO_ORIGINAL_VIDEO"   It will create new video with detections.
+
 --output_video_path "PATH_TO_NEW_VIDEO"          The location with new name of video is set. The format for the new
 video should be .mp4
---show_particles Argument to signal, if the video should show particles of particle filters.
+
+--evaluation_file_path "PATH_TO_THE_FILE_WITH_GROUND_TRUTH_DATA"     the file that has the ground truth data for the
+proccesed video. If not selected, the evaluation is not done.
+
+--show_particles    Argument to signal, if the video should show particles of particle filters.
 ```

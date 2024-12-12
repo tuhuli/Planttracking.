@@ -69,7 +69,8 @@ class ParticleFilterManager(FilterManager):
             p_f.update_with_image(grayscale_image)
 
             p_f.estimate()
-            evaluator.save_result(p_f.id, frame_number, p_f.x, p_f.y)
+            if evaluator is not None:
+                evaluator.save_result(p_f.id, frame_number, p_f.x, p_f.y)
 
             if p_f.neff() < self.number_of_particles / 2:
                 p_f.improved_systematic_resample()

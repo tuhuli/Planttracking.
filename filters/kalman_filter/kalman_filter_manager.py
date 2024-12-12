@@ -81,7 +81,8 @@ class KalmanFilterManager(FilterManager):
                 measurement = np.array([plant_tuple[0], plant_tuple[1]])
 
             k_filter.update(measurement)
-            evaluator.save_result(k_filter.id, frame_number, k_filter.x[0], k_filter.x[1])
+            if evaluator is not None:
+                evaluator.save_result(k_filter.id, frame_number, k_filter.x[0], k_filter.x[1])
 
     def pair_filter_with_plants(self, plants: List[Tuple[float, float]]) -> List[
         Tuple[KalmanFilterID, Tuple[float, float] | None]]:

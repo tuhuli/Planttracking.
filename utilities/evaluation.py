@@ -1,17 +1,10 @@
 import json
 from typing import List, Dict, Tuple
 
-
-def is_in_evaluation_area(position_dict: Dict[str, int]) -> bool:
-    min_position = 50
-    max_position = 622
-    return max_position > position_dict["x"] > min_position
-
-
 class SyntheticEvaluator:
     def __init__(self, path: str):
         self.filter_data = {}
-        self.ground_truth_data: Dict[int, List[Dict[str, int]]] = self.load_ground_truth_data(path)
+        self.ground_truth_data: Dict[int, List[Dict[str, int]]] = load_ground_truth_data(path)
         self.id_switches: Dict[int, List[Tuple[int, int, int]]] = {}
         self.missed: Dict[int, List[Dict[str, int]]] = {}
         self.false_positive: Dict[int, List[Dict[str, int]]] = {}
@@ -66,7 +59,10 @@ class SyntheticEvaluator:
                 self.total_false_positives += 1
                 self.false_positive[frame_number].append(detection_dic)
 
-    def evaluate(self):
+    def evaluate(self) -> None:
+        """
+            Performs evaluation by comparing ground truth data with filter detections frame by frame.
+        """
         print("start evaluation")
         last_frame = max(max(self.ground_truth_data.keys()), max(self.filter_data.keys()))
         current_frame = 0
@@ -83,13 +79,19 @@ class SyntheticEvaluator:
             current_frame += 1
         print("end_evaluation")
 
-    def calculate_MOTP(self):
+    def calculate_MOTP(self) -> None:
+        """
+            Calculates and prints the Multi-Object Tracking Precision (MOTP) metric.
+        """
         MOTP = self.total_distance / self.total_matches
         print(f"Total matches = {self.total_matches}")
         print(f"Total distance = {self.total_distance}")
         print(f"MOTP: Total distance / Total matches = {MOTP}")
 
-    def calculate_MOTA(self):
+    def calculate_MOTA(self) -> None:
+        """
+            Calculates and prints the Multi-Object Tracking Accuracy (MOTA) metric for evaluation.
+        """
         total_error = self.total_id_switches + self.total_missed + self.total_false_positives
         MOTA = 1 - total_error / self.total_used_ground_truth
 
@@ -99,16 +101,17 @@ class SyntheticEvaluator:
         print(f"Total errors (ID switches + false positive + missed detection) = {total_error}")
         print(f"Total ground truth = {self.total_used_ground_truth}")
         print(f"MOTA = f{MOTA}")
-        print(self.missed)
 
-
-    def print_false_positives(self):
-        print("False positives (only frames with false positives):")
+    def print_false_positives(self) -> None:
+        """
+            Prints the false positives for each frame and collects their unique IDs.
+        """
+        print("False positives:")
         ids = set()
         for frame, false_positives in self.false_positive.items():
             if false_positives:
                 print(false_positives)
-                false_positive_ids = [ids.add(fp["id"]) for fp in false_positives]
+                print(frame)
         print(ids)
 
     def save_result(self, object_id: int, frame: int, x: int, y: int) -> None :
@@ -126,19 +129,34 @@ class SyntheticEvaluator:
 
         self.filter_data[frame].append({"id": object_id, "x": x, "y": y})
 
-    def load_ground_truth_data(self, file_path: str) -> Dict[int, List[Dict[str, int]]]:
+
+def is_in_evaluation_area(position_dict: Dict[str, int]) -> bool:
+    """
+        Checks if a given position is within the evaluation area.
+
+        Parameters:
+            position_dict (Dict[str, int]): A dictionary containing the position with an "x" key.
+
+        Returns:
+            bool: True if the position's "x" value is within the range [50, 622), otherwise False.
         """
-            Load ground truth data from a JSON file.
+    min_position = 50
+    max_position = 622
+    return max_position > position_dict["x"] >= min_position
 
-            Parameters:
-            file_path (str): The path to the JSON file containing ground truth data.
 
-        """
-        print("start loading gt_data")
-        with open(file_path, "r") as file:
-            ground_truth = json.load(file)
+def load_ground_truth_data(file_path: str) -> Dict[int, List[Dict[str, int]]]:
+    """
+        Load ground truth data from a JSON file.
 
-        ground_truth_dic = {int(frame_number): value for frame_number, value in ground_truth.items()}
-        print("end loading gt_data")
-        return ground_truth_dic
+        Parameters:
+        file_path (str): The path to the JSON file containing ground truth data.
 
+    """
+    print("start loading gt_data")
+    with open(file_path, "r") as file:
+        ground_truth = json.load(file)
+
+    ground_truth_dic = {int(frame_number): value for frame_number, value in ground_truth.items()}
+    print("end loading gt_data")
+    return ground_truth_dic

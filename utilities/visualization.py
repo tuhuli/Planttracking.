@@ -101,4 +101,4 @@ def show_ground_truth_location(frame: np.ndarray, frame_number: int, evaluator: 
             cv2.putText(frame, f'ID: {annotation["id"]}', (x + 10, y ), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
                         (255, 0, 0), 1)
 
-    cv2.line(frame, (622, 0), (622, frame.shape[0]), (0, 255, 255), 2)
+    #cv2.line(frame, (622, 0), (622, frame.shape[0]), (0, 255, 255), 2)

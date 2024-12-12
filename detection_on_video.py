@@ -68,6 +68,6 @@ def tracking_on_video(new_cap: cv2.VideoCapture, read_cap: cv2.VideoCapture, out
         frame_number += 1
 
     evaluator.evaluate()
-    evaluator.print_false_positives()
+    #evaluator.print_false_positives()
     evaluator.calculate_MOTA()
     evaluator.calculate_MOTP()

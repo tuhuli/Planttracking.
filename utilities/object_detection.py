@@ -6,23 +6,19 @@ from filters.filter_manager import FilterManager
 from filters.kalman_filter.kalman_filter_manager import KalmanFilterManager
 from filters.particle_filter.particle_filter_manager import ParticleFilterManager
 from skimage import io as skio
-from utilities.trackedObject import TrackedObject
 
 
 def get_plants_and_initialize_filter(image: np.ndarray,
                                      f_manager: FilterManager,
                                      no_object_frames_counter: int,
-                                     ) -> Tuple[list[TrackedObject], int]:
+                                     ) -> Tuple[list[float, float], int]:
     """
-        Creates a TrackedObject for each plant detected in an image. If no plant is in initialize area, initialize a 
-        filter. Detected plant is a connected component with area of 3000 to 10000 pixels.
+        Creates a TrackedObject for each plant detected in an image and initializes filters.
 
         Parameters:
             image (numpy.ndarray): T input grayscale image.
             f_manager (List[kalman_filter.KalmanFilterID] | List[ParticleFilter]): List of active Kalman filters.
-
             no_object_frames_counter (int): Number of frames without detected plant in initialization area.
-            filter (str): Name of the filter to initialize. 'particle'/'kalman'
 
         Returns:
             List[TrackedObject]: List of detected objects.
@@ -37,19 +33,12 @@ def get_plants_and_initialize_filter(image: np.ndarray,
         x, y, w, h, area, c_x, c_y = get_object_stats(i, stats, centroids)
 
         if 3000 < area < 10000:
-            tr_object = TrackedObject(x + w // 2, y + h // 2, w // 2, h // 2, )
-
-            plants.append(tr_object)
+            plants.append((x + w // 2, y + h // 2))
 
             if c_x < 150 and no_object_frames_counter > 5:
                 plant_in_initialization_area = True
-
-                if isinstance(f_manager, KalmanFilterManager):
-                    f_manager.initialize_filter(o=tr_object)
-
-                elif isinstance(f_manager, ParticleFilterManager):
-                    height, width = image.shape
-                    f_manager.initialize_filter(max_width=width, max_height=height, x=x, y=y, w=w, h=h)
+                height, width = image.shape
+                f_manager.initialize_filter(width, height, x, y, w, h)
 
             elif c_x < 150:
                 plant_in_initialization_area = True
@@ -70,15 +59,11 @@ def get_object_stats(i: int, stats: np.ndarray, centroids: np.ndarray) -> tuple[
 
     Parameters:
         i (int): The index of the connected component.
-        stats (numpy.ndarray): The statistics of all connected components. This array is typically obtained
-                               from the `cv2.connectedComponentsWithStats` function.
-        centroids (numpy.ndarray): The centroid coordinates of all connected components. This array is typically 
-        obtained
-                                   from the `cv2.connectedComponentsWithStats` function.
+        stats (np.ndarray): The statistics of all connected components.
+        centroids (np.ndarray): The centroid coordinates of all connected components.
 
     Returns:
-        Tuple[int, int, int, int, int, float, float]: 
-            A tuple containing the following statistics and coordinates for the specified connected component:
+        tuple[int, int, int, int, int, float, float]:
             - x (int): The leftmost (x) coordinate of the bounding box.
             - y (int): The topmost (y) coordinate of the bounding box.
             - w (int): The width of the bounding box.
@@ -98,38 +83,5 @@ def get_object_stats(i: int, stats: np.ndarray, centroids: np.ndarray) -> tuple[
     return x, y, w, h, area, c_x, c_y
 
 
-def detect_objects(image, min_size=3000):
-    numLabels, labels, stats, centroinds = cv2.connectedComponentsWithStats(image, 8, cv2.CV_32S)
-    for i in range(0, numLabels):
-        if i == 0:
-            continue
-
-        x = stats[i, cv2.CC_STAT_LEFT]
-        y = stats[i, cv2.CC_STAT_TOP]
-        w = stats[i, cv2.CC_STAT_WIDTH]
-        h = stats[i, cv2.CC_STAT_HEIGHT]
-
-        area = stats[i, cv2.CC_STAT_AREA]
-        cX, cY = centroinds[i]
-        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 3)
-        cv2.circle(image, (int(cX), int(cY)), 4, (0, 0, 255), -1)
-        print(f"INFO: Area = {area},   centroid= {centroinds[i]}")
-
-    return image
 
 
-def detection_test():
-    image = cv2.imread("../Datasets/vineyard_screenshots/row_71_small/pred/predicted0169.png")
-    image = np.array(image[:, :, 0])
-
-    threshold = 200
-    image = np.where(image < 200, 0, image)
-
-    image = detect_objects(image[:, len(image[:]) - 200:])
-
-    skio.imshow(image)
-    skio.show()
-
-
-if __name__ == "__main__":
-    detection_test()

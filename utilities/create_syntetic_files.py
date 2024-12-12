@@ -1,5 +1,5 @@
 from math import sin, cos, radians
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import json
 import cv2
@@ -9,7 +9,6 @@ import numpy as np
 def ellipse_formula(x: float, y: float, a: float, b: float, h: float, k: float, angle: float) -> float:
     """
         Calculate the value of the ellipse formula for given coordinates and ellipse parameters.
-        Values bigger then 1 does not lie in the ellipsis
 
         Parameters:
         x (float): The x-coordinate of the point.
@@ -27,7 +26,16 @@ def ellipse_formula(x: float, y: float, a: float, b: float, h: float, k: float, 
             ((((x - h) * sin(angle) - (y - k) * cos(angle)) ** 2) / (b ** 2)))
 
 
-def write_ellipse_to_frame(x_pos:int, y_pos:int, angle: float, frame: np.ndarray) -> None:
+def write_ellipse_to_frame(x_pos: int, y_pos: int, angle: float, frame: np.ndarray) -> None:
+    """
+    Draws an ellipse on a given frame.
+
+    Parameters:
+        x_pos (int): X-coordinate of the ellipse center.
+        y_pos (int): Y-coordinate of the ellipse center.
+        angle (float): Rotation angle of the ellipse in radians.
+        frame (np.ndarray): The frame on which the ellipse is drawn.
+    """
     height, width = frame.shape
 
     ellipse_axes = (50, 110)
@@ -42,23 +50,18 @@ def write_ellipse_to_frame(x_pos:int, y_pos:int, angle: float, frame: np.ndarray
 
 def create_ground_truth_file(ellipses_id_frames: Dict[str, List[Dict[str, float]]], location_path: str) -> None:
     """
-    Create a ground truth JSON file containing the frame-wise positions of ellipses.
+    Create a ground truth JSON file containing the positions of ellipses.
 
     Parameters:
-    ellipses_id_frames (Dict[str, List[Dict[str, float]]]):
-        A dictionary where:
-            - Keys are ellipse IDs (as strings).
-            - Values are lists of dictionaries, where each dictionary contains:
-                - "frame" (int): The frame number.
-                - "x" (float): The x position of the ellipse.
-                - "y" (float): The y position of the ellipse.
+    ellipses_id_frames (Dict[str, List[Dict[str, float]]]): Dictionary containing the ground truth data
     location_path (str): The base file path (without extension) for the JSON file.
 
     """
     with open(f"{location_path}_ground_truth.json", "w") as file:
         json.dump(ellipses_id_frames, file, indent=4)
 
-def create_synthetic_video(number_of_frames: int, video_location: str, velocity:int, ) -> None:
+
+def create_synthetic_video(number_of_frames: int, video_location: str, velocity:int) -> None:
     """
         Create a synthetic video with moving ellipses.
 
@@ -68,8 +71,8 @@ def create_synthetic_video(number_of_frames: int, video_location: str, velocity:
         """
 
     width, height = 672, 368
-    #fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    #out = cv2.VideoWriter(video_location, fourcc, 59.94, (width, height), isColor=False)
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(video_location, fourcc, 59.94, (width, height), isColor=False)
 
     start_x_pos = -50
     y_pos = 150
@@ -84,8 +87,6 @@ def create_synthetic_video(number_of_frames: int, video_location: str, velocity:
         frame = np.zeros((height, width), dtype=np.uint8)
         new_ellipses = []
 
-        frames_with_ellipses[str(frame_num)] = []
-
         if len(ellipses) == 0 or (ellipses[-1][0] >= 500 and len(ellipses) == 1):
             ellipses.append((id_counter, start_x_pos, start_angle))
             id_counter += 1
@@ -96,7 +97,7 @@ def create_synthetic_video(number_of_frames: int, video_location: str, velocity:
             if x_pos < 750:
                 new_ellipses.append((id, x_pos, angle))
 
-            #write_ellipse_to_frame(x_pos, y_pos, angle, frame)
+            write_ellipse_to_frame(x_pos, y_pos, angle, frame)
 
             if velocity >= 20:
                 velocity_sign = -1
@@ -106,10 +107,10 @@ def create_synthetic_video(number_of_frames: int, video_location: str, velocity:
 
             frames_with_ellipses[str(frame_num)].append({"id": id, "x": x_pos, "y": y_pos})
 
-        #out.write(frame)
+        out.write(frame)
         ellipses = new_ellipses
 
-    #out.release()
+    out.release()
 
     create_ground_truth_file(frames_with_ellipses, video_location[:-4])
 

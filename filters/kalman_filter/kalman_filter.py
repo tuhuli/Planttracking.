@@ -1,50 +1,30 @@
-from typing import Tuple, List
-
-import numpy as np
 from filterpy.kalman import KalmanFilter
-from utilities.trackedObject import TrackedObject
 
 
 class KalmanFilterID(KalmanFilter):
     """
-        KalmanFilterID extends KalmanFilter with ID and frame_not_found counter.
-
-        Attributes:
-            id (int): ID for the Kalman filter.
-            frames_not_found (int): Counter for frames where the object was not found.
+        KalmanFilterID extends KalmanFilter with ID.
         """
 
-    def __init__(self, dim_x: int, dim_z: int, id: int):
-        """
-        Initializes the KalmanFilterID object.
-
-        Parameters:
-            dim_x (int): Dimension of the state vector.
-            dim_z (int): Dimension of the measurement vector.
-            id (int): ID for the Kalman filter.
-        """
+    def __init__(self, dim_x: int, dim_z: int, filter_id: int):
         super().__init__(dim_x=dim_x, dim_z=dim_z)
-        self.id = id
+        self.id = filter_id
         self.frames_not_found = 0
 
-    def get_centre_x(self):
+    def get_centre_x(self) -> float:
         """
-        Returns the x-coordinate of the filter position
+            Returns the x-coordinate of the filter's estimated center.
+
+            Returns:
+                int: The x-coordinate of the filter's center.
         """
         return self.x[0]
 
-    def get_centre_y(self):
+    def get_centre_y(self) -> float :
         """
-        Returns the y-coordinate of the filter position
+            Returns the y-coordinate of the filter's estimated center.
+
+            Returns:
+                int: The y-coordinate of the filter's center.
         """
         return self.x[1]
-
-    def print_information(self):
-        """
-        Prints information about filter.
-        The informations are:
-            ID
-            Position
-            Velocity
-        """
-        print(f"ID: {self.id} | position: {self.get_centre_x()} {self.get_centre_y()} | velocity: {self.x[2]} {self.x[3]}")

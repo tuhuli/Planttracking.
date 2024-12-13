@@ -1,6 +1,5 @@
 The filter type and the path to the video with probability maps are needed to run the program.
-The CNN output is located in data/videos. The video provided by the industry partner is 
-in the original directory. The original video can also be found there and can be used as 
+The CNN output is located in data/videos. The video provided by the industry partner can be found at https://drive.google.com/drive/folders/1ICQ5WxdF4GXHzYbMCmybX3vOG8a83Vnj?usp=drive_link. The original video can also be found there and can be used as 
 --output_video_path. The artificial videos are located in data/videos/synthetic.
 
 ```markdown

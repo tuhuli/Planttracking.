@@ -49,8 +49,7 @@ class ParticleFilter:
                 measurement_likelihood = bilinear_interpolate(image, x, y)
                 self.weights[i] = (self.weights[i] + 0.0005) * measurement_likelihood
 
-        self.weights += 1.e-300  # avoid round-off to zero
-        self.weights /= sum(self.weights)  # normalize
+        self.weights /= sum(self.weights) + 1.e-30  # normalize
         self.max_weight = max(self.weights)
 
     def estimate(self) -> Tuple[float, float]:

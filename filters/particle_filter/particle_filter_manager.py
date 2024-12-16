@@ -11,7 +11,7 @@ class ParticleFilterManager(FilterManager):
     def __init__(self):
         super().__init__()
         self.id_counter = 0
-        self.number_of_particles = 1000
+        self.number_of_particles = 500
 
     def initialize_filter(self, max_width: int, max_height: int, x: int, y: int, w: int, h: int) -> ParticleFilter:
         """
@@ -65,7 +65,7 @@ class ParticleFilterManager(FilterManager):
                 self.initialized_filter = None
                 continue
 
-            p_f.predict((1, 0.1, 1, 0.05))
+            p_f.predict((1, 0.2, 1, 0.05))
             p_f.update_with_image(grayscale_image)
 
             p_f.estimate()

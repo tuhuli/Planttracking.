@@ -83,17 +83,19 @@ def create_synthetic_video(number_of_frames: int, video_location: str, velocity:
     frames_with_ellipses = {}
     ellipses = []
     for frame_num in range(number_of_frames):
+        frames_with_ellipses[str(frame_num)] = []
         print(frame_num)
         frame = np.zeros((height, width), dtype=np.uint8)
         new_ellipses = []
 
-        if len(ellipses) == 0 or (ellipses[-1][0] >= 500 and len(ellipses) == 1):
+        if len(ellipses) == 0 or (ellipses[-1][1] >= 500 and len(ellipses) == 1):
             ellipses.append((id_counter, start_x_pos, start_angle))
             id_counter += 1
 
         for id, x_pos, angle in ellipses:
             x_pos += velocity
             angle = radians(-45) + (x_pos / width) * (radians(45) - radians(-45))
+            print(f"{angle} position {x_pos}")
             if x_pos < 750:
                 new_ellipses.append((id, x_pos, angle))
 
@@ -103,7 +105,7 @@ def create_synthetic_video(number_of_frames: int, video_location: str, velocity:
                 velocity_sign = -1
             if velocity <= 2:
                 velocity_sign = 1
-            #velocity += velocity_sign
+            velocity += velocity_sign
 
             frames_with_ellipses[str(frame_num)].append({"id": id, "x": x_pos, "y": y_pos})
 
@@ -115,4 +117,4 @@ def create_synthetic_video(number_of_frames: int, video_location: str, velocity:
     create_ground_truth_file(frames_with_ellipses, video_location[:-4])
 
 
-create_synthetic_video(1600, "20_velocity_synthetic.mp4", 20)
+create_synthetic_video(1600, "changing_5_velocity_synthetic.mp4", 5)

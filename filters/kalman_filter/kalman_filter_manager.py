@@ -32,7 +32,15 @@ class KalmanFilterManager(FilterManager):
         self.id_counter += 1
 
         f = KalmanFilterID(4, 2, self.id_counter)
-        f.x = np.array([x + w // 2, y + h // 2, 13., 0.])
+
+        if len(self.filters) == 0:
+            f.x = np.array([x + w // 2, y + h // 2, 13., 0.])
+        else:
+            second_filter = self.filters[0]
+            f.x = np.array([x + w // 2, y + h // 2, second_filter.x[2], second_filter.x[3]])
+
+
+
         f.F = np.array([[1., 0., 1., 0.],
                         [0., 1., 0., 1.],
                         [0., 0., 1., 0.],

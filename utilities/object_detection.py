@@ -3,9 +3,6 @@ from typing import Tuple, Any
 import cv2
 import numpy as np
 from filters.filter_manager import FilterManager
-from filters.kalman_filter.kalman_filter_manager import KalmanFilterManager
-from filters.particle_filter.particle_filter_manager import ParticleFilterManager
-from skimage import io as skio
 
 
 def get_plants_and_initialize_filter(image: np.ndarray,
@@ -16,13 +13,12 @@ def get_plants_and_initialize_filter(image: np.ndarray,
         Creates a TrackedObject for each plant detected in an image and initializes filters.
 
         Parameters:
-            image (numpy.ndarray): T input grayscale image.
-            f_manager (List[kalman_filter.KalmanFilterID] | List[ParticleFilter]): List of active Kalman filters.
+            image (numpy.ndarray): Tresholded input grayscale image.
+            f_manager (FilterManager): Manager of the particle or kalman filters.
             no_object_frames_counter (int): Number of frames without detected plant in initialization area.
 
         Returns:
             List[TrackedObject]: List of detected objects.
-            int: Updated number of detected objects.
             int: Updated number of frames without detected plant in initialization area.
         """
     plant_in_initialization_area = False
